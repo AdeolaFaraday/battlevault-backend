@@ -1,0 +1,16 @@
+# Custom Scalars
+scalar JSON
+scalar Upload
+
+type Query {
+  _empty: String
+}
+
+union ResponseData = User
+
+type Response {
+  statusCode: Int!
+  success: Boolean!
+  message: String!
+  data: ResponseData
+}

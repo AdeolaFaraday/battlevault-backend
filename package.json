@@ -1,0 +1,37 @@
+{
+  "name": "battlevault-backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.ts",
+  "scripts": {
+    "dev": "nodemon --watch 'src/**/*' --ext ts,graphql --exec ts-node -r tsconfig-paths/register src/app.ts",
+    "build": "tsc --project tsconfig.json && resolve-tspaths -p tsconfig.json -s ./src -o ./dist && cp -r ./src/graphql/typedefs ./dist/graphql",
+    "start": "node dist/app.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@types/graphql-upload": "^8.0.12",
+    "apollo-server": "^3.13.0",
+    "apollo-server-core": "^3.13.0",
+    "apollo-server-express": "^3.13.0",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-graphql": "^0.12.0",
+    "graphql": "^15.9.0",
+    "graphql-playground-middleware": "^1.1.2",
+    "graphql-type-json": "^0.3.2",
+    "graphql-upload": "^13.0.0",
+    "mongoose": "^8.9.3"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/graphql-type-json": "^0.3.5",
+    "@types/node": "^22.10.5",
+    "nodemon": "^3.1.9",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.7.2"
+  }
+}
