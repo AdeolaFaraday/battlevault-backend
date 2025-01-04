@@ -23,10 +23,10 @@ const App = async () => {
         })
     );
 
-    // app.use(
-    //     '/graphql',
-    //     graphqlUploadExpress({ maxFileSize: 10000000, maxFiles: 10 })
-    // );
+    app.use(
+        '/graphql',
+        graphqlUploadExpress({ maxFileSize: 10000000, maxFiles: 10 })
+    );
 
     await graphqlServer.start();
 
