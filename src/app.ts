@@ -39,6 +39,10 @@ const App = async () => {
         })
     );
 
+    app.use('*', (req, res) => {
+        res.send(`route not found for ${req.originalUrl}`)
+    });
+
     graphqlHttpServer.listen(appEnv.port, async () => {
         console.log(
             `Server started on http://localhost:${appEnv.port}${graphqlServer.graphqlPath}`
