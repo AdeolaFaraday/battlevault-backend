@@ -4,11 +4,12 @@ import { graphqlUploadExpress } from "graphql-upload";
 
 import graphqlServer from './graphql';
 import { expressPlayground } from "graphql-playground-middleware";
-import loadAppEnvs, { env, port } from "./config/environment";
+import loadAppEnvs, { env, port, db } from "./config/environment";
+import startDB from "./startup/db";
 
 
 const App = async () => {
-    let appEnv = { port, env };
+    let appEnv = { port, env, db };
     if (!env.development) {
         appEnv = loadAppEnvs();
     }
@@ -44,6 +45,7 @@ const App = async () => {
     });
 
     graphqlHttpServer.listen(appEnv.port, async () => {
+        startDB(appEnv.db.uri);
         console.log(
             `Server started on http://localhost:${appEnv.port}${graphqlServer.graphqlPath}`
         );

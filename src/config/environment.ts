@@ -13,11 +13,15 @@ const loadAppEnvs = () => {
         production: process.env.NODE_ENV === 'production',
     };
 
-    return { port, env };
+    const db = {
+        uri: process.env.DB_CLOUD_CONNECTION,
+    };
+
+    return { port, env, db };
 };
 
-const { port, env } = loadAppEnvs();
+const { port, env, db } = loadAppEnvs();
 
-export { port, env };
+export { port, env, db };
 
 export default loadAppEnvs;
