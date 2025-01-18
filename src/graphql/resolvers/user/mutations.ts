@@ -1,14 +1,21 @@
+import { CreateUserInputs } from "../../../models/user/types/userAuth";
 import ClientResponse from "../../../services/response";
+import AuthService from "../../services/user/auth";
 
 const userMutations = {
     createUser: async (
         _: any,
         userInput: {
-            args: any;
+            args: CreateUserInputs;
         },
         context: any
     ) => {
-        return new ClientResponse(200, false, "create user", null);
+        try {
+            const { args } = userInput;
+            return await AuthService.register(args, context);
+        } catch (err: any) {
+            return new ClientResponse(400, false, err.message, null);
+        }
     },
 }
 

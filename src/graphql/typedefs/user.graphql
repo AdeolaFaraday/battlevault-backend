@@ -1,4 +1,8 @@
-
+enum EGender {
+  MALE
+  FEMALE
+  OTHER
+}
 
 type User {
     _id: ID!
@@ -10,6 +14,8 @@ input UserInput {
   username: String!
   email: String!
   password: String!
+  avatar: String
+  gender: EGender!
 }
 
 type Query {
@@ -23,4 +29,5 @@ type Mutation {
   createUser(
     args: UserInput
   ): Response
+  login(email: String, password: String): Response
 }
