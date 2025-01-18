@@ -16,6 +16,7 @@
     "apollo-server": "^3.13.0",
     "apollo-server-core": "^3.13.0",
     "apollo-server-express": "^3.13.0",
+    "directory-import": "^3.3.2",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "express-graphql": "^0.12.0",

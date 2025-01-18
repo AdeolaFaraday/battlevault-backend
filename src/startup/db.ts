@@ -8,10 +8,9 @@ export default async function startDB(cstring: string | undefined = db.uri) {
         // Object.keys(mongoose.connection.models).forEach(key => {
         //   delete mongoose.connection.models[key];
         // });
-        // const connections = mongoose.connection.getClient();
-        // console.log({ connections });
-
-        console.log(`Connected to MongoDb`);
+        const connection = mongoose.connection as any
+        const connections = connection?.base?.connections;
+        console.log(`Connected to MongoDb. Current connection pool size: ${connections?.length}`);
     } catch (error) {
         console.error(error);
     }
