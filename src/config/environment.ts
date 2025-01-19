@@ -15,13 +15,19 @@ const loadAppEnvs = () => {
 
     const db = {
         uri: process.env.DB_CLOUD_CONNECTION,
+        sessionSecret: process.env.DB_MONGO_SESSION_SECRET
     };
 
-    return { port, env, db };
+    const jwt = {
+        jwtSecret: process.env.JWT_SECRET,
+        jwtExp: process.env.JWT_EXP,
+    };
+
+    return { port, env, db, jwt };
 };
 
-const { port, env, db } = loadAppEnvs();
+const { port, env, db, jwt } = loadAppEnvs();
 
-export { port, env, db };
+export { port, env, db, jwt };
 
 export default loadAppEnvs;

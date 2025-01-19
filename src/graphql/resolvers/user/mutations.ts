@@ -17,6 +17,17 @@ const userMutations = {
             return new ClientResponse(400, false, err.message, null);
         }
     },
+    login: async (
+        _: any,
+        { email, password }: { email: string; password: string },
+        context: any
+    ) => {
+        try {
+            return await AuthService.login({ email, password }, context);
+        } catch (error: any) {
+            return new ClientResponse(401, false, error.message, null);
+        }
+    },
 }
 
 export default userMutations;

@@ -1,6 +1,8 @@
 import express from "express"
 import httpServer from "http"
 import { graphqlUploadExpress } from "graphql-upload";
+import session from 'express-session';
+import cookieParser from 'cookie-parser';
 
 import graphqlServer from './graphql';
 import { expressPlayground } from "graphql-playground-middleware";
@@ -15,6 +17,27 @@ const App = async () => {
     }
     const app = express();
     const graphqlHttpServer = httpServer.createServer(app);
+
+    app.use(cookieParser());
+    app.set('trust proxy', 1);
+    console.log({ ENV: process.env.NODE_ENV });
+    app.use(
+      session({
+        name: 'cookie',
+        secret: appEnv.db.sessionSecret as string,
+        resave: false,
+        saveUninitialized: true,
+        // proxy: false,
+        // secure: process.env.NODE_ENV !== "development",
+        cookie: {
+          maxAge: 1000 * 60 * 60 * 24, // One day
+          sameSite: 'lax',
+          secure: process.env.NODE_ENV !== "development",
+        },
+        // store,
+        unset: 'destroy',
+      })
+    );
 
     app.use(
         express.urlencoded({
