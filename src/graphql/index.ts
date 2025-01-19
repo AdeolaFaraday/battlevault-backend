@@ -3,11 +3,12 @@ import { ApolloServerPluginLandingPageGraphQLPlayground } from "apollo-server-co
 
 import schema from "./schema"
 import { env } from "../config/environment";
+import { buildContext } from "./services/auth/buildContext";
 
 
 const apolloServer: any = new ApolloServer({
     schema,
-    // context: ({ req, res }) => buildContext({ req, res }),
+    context: ({ req, res }) => buildContext({ req, res }),
     plugins: env.development
         ? [ApolloServerPluginLandingPageGraphQLPlayground]
         : [],
