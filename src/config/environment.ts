@@ -13,6 +13,12 @@ const loadAppEnvs = () => {
         production: process.env.NODE_ENV === 'production',
     };
 
+    const whitelist = [
+        process.env.CLIENT_SIDE_URL,
+        process.env.SERVER_URL,
+        process.env.CLIENT_URL,
+    ];
+
     const db = {
         uri: process.env.DB_CLOUD_CONNECTION,
         sessionSecret: process.env.DB_MONGO_SESSION_SECRET
@@ -23,11 +29,11 @@ const loadAppEnvs = () => {
         jwtExp: process.env.JWT_EXP,
     };
 
-    return { port, env, db, jwt };
+    return { port, env, db, jwt, whitelist };
 };
 
-const { port, env, db, jwt } = loadAppEnvs();
+const { port, env, db, jwt, whitelist } = loadAppEnvs();
 
-export { port, env, db, jwt };
+export { port, env, db, jwt, whitelist };
 
 export default loadAppEnvs;
