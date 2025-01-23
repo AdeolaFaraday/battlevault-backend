@@ -133,17 +133,17 @@ mutation LoginUser($email: String, $password: String) {
 ## Folder Structure
 
 root
-├── src
-│   ├── config        # Configuration files
-│   ├── controllers   # Route controllers
-│   ├── graphql       # GraphQL schema and resolvers
-│   ├── middlewares   # Express middlewares
-│   ├── models        # MongoDB models
-│   ├── services      # Business logic
-|   ├── startup       # Db service initialization
-│   ├── utils         # Utility functions
-│   └── app.ts        # Entry point
-├── tests             # Unit and integration tests
-├── .env.example      # Sample environment variables
-├── tsconfig.json     # TypeScript configuration
-└── package.json      # Project metadata and scripts
+`├── src`
+`│   ├── config         # Configuration files`        
+`│   ├── controllers    # Route controllers`   
+`│   ├── graphql        # GraphQL schema and resolvers`       
+`│   ├── middlewares    # Express middlewares`   
+`│   ├── models         # MongoDB models`        
+`│   ├── services       # Business logic`      
+`|   ├── startup        # Db service initialization`       
+`│   ├── utils          # Utility functions`        
+`│   └── app.ts         # Entry point`        
+`├── tests              # Unit and integration tests`             
+`├── .env.example       # Sample environment variables`      
+`├── tsconfig.json      # TypeScript configuration`     
+`└── package.json       # Project metadata and scripts`      
