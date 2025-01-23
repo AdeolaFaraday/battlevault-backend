@@ -132,7 +132,7 @@ mutation LoginUser($email: String, $password: String) {
 
 ## Folder Structure
 
-root
+`root`
 `├── src`
 `│   ├── config         # Configuration files`        
 `│   ├── controllers    # Route controllers`   
