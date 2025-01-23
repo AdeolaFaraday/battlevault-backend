@@ -133,7 +133,7 @@ mutation LoginUser($email: String, $password: String) {
 ## Folder Structure
 
 <!-- `root` -->
-`├── src                                    `
+`├── src`
 `│   ├── config         # Configuration files`        
 `│   ├── controllers    # Route controllers`   
 `│   ├── graphql        # GraphQL schema and resolvers`       
