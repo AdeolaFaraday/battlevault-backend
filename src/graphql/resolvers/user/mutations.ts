@@ -28,6 +28,18 @@ const userMutations = {
             return new ClientResponse(401, false, error.message, null);
         }
     },
+
+    socialAuth: async (
+        _: any,
+        { token }: { token: string },
+        context: any
+    ) => {
+        try {
+            return await AuthService.socialAuth({ token }, context);
+        } catch (error: any) {
+            return new ClientResponse(401, false, error.message, null);
+        }
+    },
 }
 
 export default userMutations;

@@ -28,6 +28,7 @@ const userSchema: Schema = new Schema(
         },
         profileStatus: {
             type: String,
+            default: 'ACTIVE',
             enum: ['WAITING', 'ACTIVE', 'DISABLED', 'BLACK_LISTED'],
         },
         accountStatus: { type: String },

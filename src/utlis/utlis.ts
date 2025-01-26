@@ -16,3 +16,11 @@ export function importFunctionsAndAppendToSchema(
   
     return filteredKeys;
   }
+
+  export const generateSignUpUserData = (data: any) => {
+    return {
+      username: "",
+      email: data?.email,
+      gender: data?.gender,
+    }
+  }
