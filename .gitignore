@@ -2,7 +2,7 @@ node_modules/
 .env
 build/
 dist/
-config/battlevault-firebase-adminsdk-fbsvc-0d81ec765f.json
+src/config/battlevault-firebase-adminsdk-fbsvc-0d81ec765f.json
 .vscode
 .DS_Store
 src/.DS_Store
