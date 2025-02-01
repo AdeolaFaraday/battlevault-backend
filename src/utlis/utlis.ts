@@ -19,7 +19,7 @@ export function importFunctionsAndAppendToSchema(
 
   export const generateSignUpUserData = (data: any) => {
     return {
-      username: "",
+      userName: "",
       email: data?.email,
       gender: data?.gender,
     }

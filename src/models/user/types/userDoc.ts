@@ -1,7 +1,9 @@
 export type TGender = 'MALE' | 'FEMALE' | 'OTHER';
 
 export interface IUser {
-    username: string;
+    userName: string;
+    firstName: string;
+    lastName: string;
     email: string;
     password: string;
     emailVerifiedAt?: Date;
