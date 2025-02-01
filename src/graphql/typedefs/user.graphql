@@ -6,16 +6,18 @@ enum EGender {
 
 type User {
     _id: ID!
-  username: String
+  userName: String
   email: String
 }
 
 input UserInput {
-  username: String!
+  userName: String!
+  firstName: String!
+  lastName: String!
   email: String!
   password: String!
   avatar: String
-  gender: EGender!
+  gender: EGender
 }
 
 type Query {

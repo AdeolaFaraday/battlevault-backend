@@ -10,7 +10,19 @@ const importedFunctions = directoryImport('./functions');
 
 const userSchema: Schema = new Schema(
     {
-        username: {
+        userName: {
+            type: String,
+            required: true,
+            trim: true,
+            maxlength: 25,
+        },
+        firstName: {
+            type: String,
+            required: true,
+            trim: true,
+            maxlength: 25,
+        },
+        lastName: {
             type: String,
             required: true,
             trim: true,

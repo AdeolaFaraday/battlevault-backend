@@ -9,7 +9,7 @@ export default class AuthService {
     try {
       const user = await User.getUser({
         find: {
-          $or: [{ email: userInput.email }, { username: userInput.username }],
+          $or: [{ email: userInput.email }, { username: userInput.userName }],
         },
       });
 
