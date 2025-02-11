@@ -39,15 +39,23 @@ export const authenticate = (req: Request, res: Response) => {
         //     throw new Error('Please verify your email address!');
         // } 
         else {
-            const isMatch = await bcrypt.compare(
-                password as string,
-                matchingUser.password
-            );
-            if (isMatch) {
-                loginUser(matchingUser, res);
-                return matchingUser;
-            } else {
-                throw new Error('Invalid email and password combination!');
+            try {
+                if (JSON.parse(password).isValidated) {
+                    loginUser(matchingUser, res);
+                    return matchingUser;
+                }
+                throw new Error('An error occurred during authentication');
+            } catch (error) {
+                const isMatch = await bcrypt.compare(
+                    password as string,
+                    matchingUser.password
+                );
+                if (isMatch) {
+                    loginUser(matchingUser, res);
+                    return matchingUser;
+                } else {
+                    throw new Error('Invalid email and password combination!');
+                }
             }
         }
     }
