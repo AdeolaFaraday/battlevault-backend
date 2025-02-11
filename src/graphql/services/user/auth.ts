@@ -57,7 +57,7 @@ export default class AuthService {
       const userExist = await User.findOne({ email: socialAuthData?.email });
 
       if (userExist) {
-        context.authenticate({
+        await context.authenticate({
           email: userExist.email,
           password: JSON.stringify({
             isValidated: true,

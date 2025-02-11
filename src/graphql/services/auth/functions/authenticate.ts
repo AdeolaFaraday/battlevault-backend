@@ -44,7 +44,6 @@ export const authenticate = (req: Request, res: Response) => {
                     loginUser(matchingUser, res);
                     return matchingUser;
                 }
-
                 throw new Error('An error occurred during authentication');
             } catch (error) {
                 const isMatch = await bcrypt.compare(
