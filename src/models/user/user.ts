@@ -38,6 +38,9 @@ const userSchema: Schema = new Schema(
         password: {
             type: String,
         },
+        emailVerificationToken: {
+            type: String,
+        },
         profileStatus: {
             type: String,
             default: 'ACTIVE',
