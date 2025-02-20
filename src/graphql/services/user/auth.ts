@@ -1,3 +1,4 @@
+import jwt from 'jsonwebtoken';
 import { CreateUserInputs } from "../../../models/user/types/userAuth";
 import User from "../../../models/user/user";
 import SocialAuthService from "../../../services/auth/socialauth";
@@ -49,6 +50,24 @@ export default class AuthService {
       password,
     });
     return new ClientResponse(200, true, 'Login successful', user);
+  }
+
+  static async verifyEmail({ token }: { token: string }, _: any) {
+    //TODO:refactor to use login jwt convention
+    const decoded = jwt.verify(token as string, process.env.JWT_SECRET as string) as { email: string };
+    const user = await User.findOne({ email: decoded?.email });
+
+    if (!user) {
+      return new ClientResponse(404, true, 'User not found', null)
+    }
+
+    if (user?.emailVerifiedAt) {
+      return new ClientResponse(400, true, 'Email already verified', null);
+    }
+    user.emailVerifiedAt = new Date();
+    user.emailVerificationToken = undefined;
+    await user.save();
+    return new ClientResponse(200, true, 'Email verified successfully', user);
   }
 
   static async socialAuth({ token }: { token: string }, context: any) {

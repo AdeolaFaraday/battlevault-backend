@@ -24,6 +24,7 @@ export const generateSignUpUserData = (data: any) => {
     firstName,
     lastName,
     avatar: data?.picture,
-    email: data?.email
+    email: data?.email,
+    emailVerifiedAt: new Date()
   }
 }
