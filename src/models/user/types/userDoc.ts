@@ -7,6 +7,7 @@ export interface IUser {
     email: string;
     password: string;
     emailVerifiedAt?: Date;
+    emailVerificationToken?: string;
     avatar?: string;
     gender: string;
     totalGamesPlayed?: number;

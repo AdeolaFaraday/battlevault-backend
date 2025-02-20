@@ -28,7 +28,17 @@ const userMutations = {
             return new ClientResponse(401, false, error.message, null);
         }
     },
-
+    verifyEmail: async (
+        _: any,
+        { token }: { token: string },
+        context: any
+    ) => {
+        try {
+            return await AuthService.verifyEmail({ token }, context);
+        } catch (error: any) {
+            return new ClientResponse(401, false, error.message, null);
+        }
+    },
     socialAuth: async (
         _: any,
         { token }: { token: string },

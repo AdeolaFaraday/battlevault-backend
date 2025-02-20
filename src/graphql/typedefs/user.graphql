@@ -32,5 +32,6 @@ type Mutation {
     args: UserInput
   ): Response
   login(email: String, password: String): Response
+  verifyEmail(token: String): Response
   socialAuth(token: String!): Response
 }

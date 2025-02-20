@@ -30,6 +30,7 @@
     "graphql-playground-middleware": "^1.1.2",
     "graphql-type-json": "^0.3.2",
     "graphql-upload": "^13.0.0",
+    "handlebars": "^4.7.8",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.9.3"
   },
