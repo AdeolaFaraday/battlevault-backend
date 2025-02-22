@@ -1,5 +1,6 @@
 import { CreateUserInputs } from "../../../models/user/types/userAuth";
 import ClientResponse from "../../../services/response";
+import authenticatedRequest from "../../authenticatedRequest";
 import AuthService from "../../services/user/auth";
 
 const userMutations = {
@@ -28,6 +29,10 @@ const userMutations = {
             return new ClientResponse(401, false, error.message, null);
         }
     },
+    logout: authenticatedRequest(async (_: any, __: any, context: any) => {
+        context.logout();
+        return new ClientResponse(200, true, 'Logout successful');
+    }),
     verifyEmail: async (
         _: any,
         { token }: { token: string },
