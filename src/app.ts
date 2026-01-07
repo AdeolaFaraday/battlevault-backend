@@ -9,6 +9,7 @@ import graphqlServer from './graphql';
 import { expressPlayground } from "graphql-playground-middleware";
 import loadAppEnvs, { env, port, db, whitelist } from "./config/environment";
 import startDB from "./startup/db";
+import RealtimeProviderFactory from "./services/realtime";
 
 
 const App = async () => {
@@ -19,6 +20,8 @@ const App = async () => {
     const app = express();
     const graphqlHttpServer = httpServer.createServer(app);
 
+    // Initialize realtime provider
+    await RealtimeProviderFactory.initialize();
 
     const corsOptions = {
         origin(origin: string | undefined, callback: (arg0: Error | null, arg1: boolean) => void) {
