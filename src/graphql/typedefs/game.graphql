@@ -1,0 +1,61 @@
+enum GameType {
+    TOURNAMENT
+    FREE
+    INSTANT_COMPETITIVE
+}
+
+type LudoPlayer {
+    id: String!
+    name: String!
+    color: String!
+    tokens: [String!]
+}
+
+type Game {
+    id: ID!
+    name: String!
+    type: GameType!
+    tournamentId: String
+    matchStage: String
+    players: [LudoPlayer!]!
+    currentTurn: String!
+    diceValue: [Int!]
+    isRolling: Boolean!
+    status: String!
+    createdAt: String
+    updatedAt: String
+}
+
+input LudoPlayerInput {
+    id: String
+    name: String!
+    color: String!
+    tokens: [String!]
+}
+
+input CreateGameInput {
+    name: String!
+    type: GameType!
+    tournamentId: String
+    matchStage: String
+    players: [LudoPlayerInput!]
+}
+
+input UpdateGameInput {
+    name: String
+    players: [LudoPlayerInput!]
+    currentTurn: String
+    diceValue: [Int!]
+    isRolling: Boolean
+    status: String
+}
+
+extend type Query {
+    getGame(id: ID!): Game
+}
+
+extend type Mutation {
+    createGame(input: CreateGameInput): Game
+    updateGame(id: ID!, input: UpdateGameInput): Game
+    joinGame(gameId: ID!, player: LudoPlayerInput!): Game
+}

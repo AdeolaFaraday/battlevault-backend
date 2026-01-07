@@ -2,6 +2,7 @@ import GraphQLJSON from "graphql-type-json";
 import { GraphQLUpload } from "graphql-upload";
 
 import { userQueries, userMutations } from './user';
+import { gameQueries, gameMutations } from './game';
 
 
 const resolvers = {
@@ -12,14 +13,19 @@ const resolvers = {
             if (obj.email) {
                 return 'User';
             }
+            if (obj.currentTurn) {
+                return 'Game';
+            }
             return null;
         }
     },
     Query: {
         ...userQueries,
+        ...gameQueries,
     },
     Mutation: {
         ...userMutations,
+        ...gameMutations,
     }
 }
 
