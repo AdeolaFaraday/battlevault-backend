@@ -5,21 +5,21 @@ const defaultPlayers = [
     {
         name: "Player 1",
         color: "BLUE",
-        tokens: ["BLUE", "BLUE", "BLUE", "BLUE"]
+        tokens: ["BLUE", "YELLOW"]
     },
     {
         name: "Player 2",
         color: "YELLOW",
-        tokens: ["YELLOW", "YELLOW", "YELLOW", "YELLOW"]
+        tokens: ["GREEN", "RED"]
     }
 ];
 
 const defaultGameState = {
     players: defaultPlayers,
-    currentTurn: "1",
+    currentTurn: "",
     diceValue: [],
     isRolling: false,
-    status: "playingDice",
+    status: "not_started",
 };
 
 const gameMutations = {
