@@ -42,7 +42,7 @@ const gameSchema: Schema = new Schema(
                 tokens: [{ type: String }]
             }
         ],
-        currentTurn: { type: String, required: true },
+        currentTurn: { type: String, required: false },
         diceValue: [{ type: Number }],
         isRolling: { type: Boolean, default: false },
         status: {

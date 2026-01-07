@@ -1,4 +1,5 @@
-import * as admin from 'firebase-admin';
+
+import { admin } from '../auth';
 import { RealtimeProvider, GameStateUpdate } from './RealtimeProvider';
 
 /**
@@ -24,6 +25,14 @@ export class FirebaseRealtimeProvider implements RealtimeProvider {
 
             await gameRef.set({
                 ...initialState,
+                players: initialState.players?.map((p: any) => {
+                    return {
+                        id: p.id,
+                        name: p.name,
+                        color: p.color,
+                        tokens: p.tokens
+                    }
+                }),
                 createdAt: admin.firestore.FieldValue.serverTimestamp(),
                 updatedAt: admin.firestore.FieldValue.serverTimestamp(),
             });
