@@ -14,7 +14,7 @@ const resolvers = {
                 return 'User';
             }
             if (obj.currentTurn) {
-                return 'Game';
+                return 'LudoGameState';
             }
             return null;
         }

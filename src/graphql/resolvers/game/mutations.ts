@@ -1,108 +1,360 @@
 import Game from "../../../models/game/game";
 import RealtimeProviderFactory from "../../../services/realtime";
+import { admin } from "../../../services/auth";
+import {
+    LudoColor,
+    LudoStatus,
+    calculateMoveUpdate,
+    getProjectedPosition,
+    getMovableTokens,
+    START_PATHS,
+    HOME_POSITIONS,
+    TokenMap,
+    LudoGameState,
+    Token,
+    getNextPlayerId
+} from "../../../services/game/ludo-logic";
 
-const defaultPlayers = [
-    {
-        name: "Player 1",
-        color: "BLUE",
-        tokens: ["BLUE", "YELLOW"]
-    },
-    {
-        name: "Player 2",
-        color: "YELLOW",
-        tokens: ["GREEN", "RED"]
-    }
-];
-
-const defaultGameState = {
-    players: defaultPlayers,
-    currentTurn: "",
-    diceValue: [],
-    isRolling: false,
-    status: "not_started",
+const INITIAL_TOKENS: TokenMap = {
+    blue: Array.from({ length: 4 }, (_, i) => ({ sn: i + 1, color: LudoColor.BLUE, active: false, position: -1, isSafePath: false, isFinished: false })),
+    yellow: Array.from({ length: 4 }, (_, i) => ({ sn: i + 1, color: LudoColor.YELLOW, active: false, position: -1, isSafePath: false, isFinished: false })),
+    green: Array.from({ length: 4 }, (_, i) => ({ sn: i + 1, color: LudoColor.GREEN, active: false, position: -1, isSafePath: false, isFinished: false })),
+    red: Array.from({ length: 4 }, (_, i) => ({ sn: i + 1, color: LudoColor.RED, active: false, position: -1, isSafePath: false, isFinished: false })),
 };
 
 const gameMutations = {
-    createGame: async (_: any, { input }: { input: any }) => {
+    createGame: async (_: any, { input }: { input: any }, context: any) => {
         try {
-            // Basic validation for tournament games
-            if (input.type === 'TOURNAMENT') {
-                if (!input.tournamentId) {
-                    throw new Error("Tournament ID is required for tournament games.");
-                }
-                if (!input.matchStage) {
-                    throw new Error("Match Stage is required for tournament games.");
-                }
-            }
+            const initialData = {
+                ...input,
+                status: LudoStatus.WAITING,
+                tokens: INITIAL_TOKENS,
+                diceValue: [],
+                usedDiceValues: [],
+                activeDiceConfig: [],
+                currentTurn: input.players?.[0]?.id || "",
+                isRolling: false,
+            };
 
-            // Merge defaults with input. 
-            // Note: input.players will override defaultPlayers if provided.
-            const initialData = { ...defaultGameState, ...input };
-
-            // Create game in MongoDB
             const game = new Game(initialData);
             const savedGame = await game.save();
 
-            // Create corresponding document in Firebase for realtime updates
             const realtimeProvider = RealtimeProviderFactory.getProvider();
-            await realtimeProvider.createGameDocument(savedGame.id, {
-                name: savedGame.name,
-                type: savedGame.type,
-                tournamentId: savedGame.tournamentId,
-                matchStage: savedGame.matchStage,
-                players: savedGame.players,
-                currentTurn: savedGame.currentTurn,
-                diceValue: savedGame.diceValue,
-                isRolling: savedGame.isRolling,
-                status: savedGame.status,
-            });
+            await realtimeProvider.createGameDocument(savedGame.id, initialData);
 
             return savedGame;
         } catch (error) {
             throw error;
         }
     },
-    updateGame: async (_: any, { id, input }: { id: string, input: any }) => {
+
+    joinGame: async (_: any, { gameId, userId, name }: { gameId: string, userId: string, name: string }) => {
+        const db = admin.firestore();
+        const gameRef = db.collection('games').doc(gameId);
+
         try {
-            // Update in MongoDB
-            const game = await Game.findByIdAndUpdate(id, input, { new: true });
-            if (!game) {
-                throw new Error("Game not found");
-            }
+            return await db.runTransaction(async (transaction) => {
+                const doc = await transaction.get(gameRef);
+                if (!doc.exists) throw new Error("Game not found");
 
-            // Update in Firebase for realtime sync
-            const realtimeProvider = RealtimeProviderFactory.getProvider();
-            await realtimeProvider.updateGameState(id, input);
+                const gameState = doc.data() as LudoGameState;
+                if (gameState.players.length >= 4) throw new Error("Game is full");
+                if (gameState.players.find(p => p.id === userId)) throw new Error("User already in game");
 
-            return game;
+                const colors = Object.values(LudoColor);
+                const usedColors = gameState.players.map(p => p.color);
+                const availableColor = colors.find(c => !usedColors.includes(c))!;
+
+                const newPlayer = {
+                    id: userId,
+                    name,
+                    color: availableColor,
+                    tokens: [availableColor], // Requirements say tokens: [LudoColor!]! in LudoPlayer
+                    capturedCount: 0,
+                    finishedCount: 0
+                };
+
+                const updatedPlayers = [...gameState.players, newPlayer];
+                const updates: any = {
+                    players: updatedPlayers,
+                    updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                };
+
+                if (updatedPlayers.length >= 2 && gameState.status === LudoStatus.WAITING) {
+                    updates.status = LudoStatus.PLAYING_DICE;
+                    updates.currentTurn = updatedPlayers[0].id;
+                }
+
+                transaction.update(gameRef, updates);
+                const { id: __, ...stateData } = gameState as any;
+                return { ...stateData, ...updates, id: gameId };
+            });
         } catch (error) {
+            console.error("Join Game Error:", error);
             throw error;
         }
     },
 
-    // New mutation for joining a game
-    joinGame: async (_: any, { gameId, player }: { gameId: string, player: any }) => {
+    rollDice: async (_: any, { gameId }: { gameId: string }, context: any) => {
+        const user = await context.getUserLocal();
+        if (!user) throw new Error("Unauthorized");
+
+        const db = admin.firestore();
+        const gameRef = db.collection('games').doc(gameId);
+
+        let errorToThrow: string | null = null;
+        let finalState: any = null;
+
         try {
-            const game = await Game.findById(gameId);
-            if (!game) {
-                throw new Error("Game not found");
+            await db.runTransaction(async (transaction) => {
+                const doc = await transaction.get(gameRef);
+                if (!doc.exists) throw new Error("Game not found");
+
+                const gameState = doc.data() as LudoGameState;
+                if (gameState.currentTurn !== user.id) throw new Error("Not your turn");
+                if (gameState.status !== LudoStatus.PLAYING_DICE) throw new Error("Cannot roll dice now");
+
+                const crypto = require("crypto");
+                const results = [
+                    crypto.randomInt(1, 7),
+                    crypto.randomInt(1, 7)
+                ];
+
+                const player = gameState.players.find(p => p.id === user.id);
+                const playerColors = player?.tokens || []; // Array of colors like ['red'] or ['blue']
+
+                // Aggregate all tokens controlled by this player
+                const myTokens = playerColors.flatMap(color => gameState.tokens[color] || []);
+
+                // GRANULAR AUTO-SKIP & DISCARD CHECK
+                const hasSix = results.includes(6);
+                const hasTokensAtHome = myTokens.some(t => !t.active && !t.isFinished);
+
+                let usableDice: number[] = [];
+
+                if (hasSix && hasTokensAtHome) {
+                    // If we have a 6 and tokens at home, ALL rolled dice are potentially usable 
+                    usableDice = results;
+                } else {
+                    // Otherwise, check if ANY owned color can use each dice value
+                    usableDice = results.filter(diceVal => {
+                        return playerColors.some(color => {
+                            const tokensOfColor = gameState.tokens[color] || [];
+                            const movableTokens = getMovableTokens(diceVal, tokensOfColor, color);
+                            return movableTokens.length > 0;
+                        });
+                    });
+                }
+
+                if (usableDice.length === 0) {
+                    // No moves possible, rotate turn and throw error to frontend
+                    const nextPlayerId = getNextPlayerId(gameState.players, gameState.currentTurn);
+
+                    const updates: any = {
+                        diceValue: [],
+                        status: LudoStatus.PLAYING_DICE,
+                        currentTurn: nextPlayerId,
+                        usedDiceValues: [],
+                        activeDiceConfig: null,
+                        lastMoverId: user.id,
+                        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                    };
+
+                    transaction.update(gameRef, updates);
+                    const { id: __, ...stateData } = gameState as any;
+                    finalState = { ...stateData, ...updates, id: gameId };
+                    errorToThrow = "No valid moves possible with these dice! Skipping turn...";
+                    return;
+                }
+
+                // If some dice were unusable, we effectively "discard" them by only setting the usable ones
+                // Note: Frontend will handle the toast info if needed based on the response
+                const updates: any = {
+                    diceValue: usableDice,
+                    status: LudoStatus.PLAYING_TOKEN,
+                    currentTurn: user.id,
+                    usedDiceValues: [],
+                    activeDiceConfig: null,
+                    lastMoverId: user.id,
+                    updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                };
+
+                transaction.update(gameRef, updates);
+                const { id: ___, ...rollStateData } = gameState as any;
+                finalState = { ...rollStateData, ...updates, id: gameId };
+            });
+
+            if (errorToThrow) {
+                throw new Error(errorToThrow);
             }
 
-            // Check if game is full
-            if (game.players.length >= 2) {
-                throw new Error("Game is already full");
-            }
-
-            // Add player to MongoDB
-            game.players.push(player);
-            const updatedGame = await game.save();
-
-            // Add player to Firebase
-            const realtimeProvider = RealtimeProviderFactory.getProvider();
-            await realtimeProvider.addPlayerToGame(gameId, player);
-
-            return updatedGame;
+            return finalState;
         } catch (error) {
+            console.error("Roll Dice Error:", error);
+            throw error;
+        }
+    },
+
+    processMove: async (_: any, { gameId, input }: { gameId: string, input: any }, context: any) => {
+        const user = await context.getUserLocal();
+        if (!user) throw new Error("Unauthorized");
+
+        const db = admin.firestore();
+        const gameRef = db.collection('games').doc(gameId);
+
+        try {
+            return await db.runTransaction(async (transaction) => {
+                const doc = await transaction.get(gameRef);
+                if (!doc.exists) throw new Error("Game not found");
+
+                const gameState = doc.data() as LudoGameState;
+                if (gameState.currentTurn !== user.id) throw new Error("Not your turn");
+                if (gameState.status !== LudoStatus.PLAYING_TOKEN) throw new Error("Cannot move now");
+
+                const tokenColor = input.color;
+                const tokenId = input.tokenId;
+                const player = gameState.players.find((p) => p.id === user.id);
+
+                // 1. GATHER CONTEXT
+                if (!player || !player.tokens.includes(tokenColor)) {
+                    throw new Error("Can't move this token!");
+                }
+
+                const tokens = gameState.tokens[tokenColor];
+                const token = tokens.find(t => t.sn === tokenId);
+                if (!token) throw new Error("Token not found");
+
+                // 2. DETERMINE AVAILABLE DICE
+                const availableDiceValues = [...gameState.diceValue];
+                gameState.usedDiceValues.forEach(usedVal => {
+                    const index = availableDiceValues.indexOf(usedVal);
+                    if (index !== -1) availableDiceValues.splice(index, 1);
+                });
+
+                if (availableDiceValues.length === 0) {
+                    throw new Error("Roll dice first / No dice left!");
+                }
+
+                // 3. DECIDE WHICH DICE TO USE
+                let diceToUse: number[] | null = null;
+                if (gameState.activeDiceConfig && gameState.activeDiceConfig.length > 0) {
+                    diceToUse = gameState.activeDiceConfig;
+                } else if (availableDiceValues.length === 1) {
+                    diceToUse = [availableDiceValues[0]];
+                }
+
+                // 4. HANDLE "ACTIVATION"
+                if (!token.active) {
+                    const hasSix = diceToUse?.includes(6) || (!diceToUse && availableDiceValues.includes(6));
+                    if (hasSix) {
+                        const finalDiceToConsume = diceToUse || [6];
+                        const totalMoveAmount = finalDiceToConsume.reduce((sum, val) => sum + val, 0);
+                        const extraSteps = totalMoveAmount - 6;
+                        const newPosition = START_PATHS[tokenColor] + extraSteps;
+
+                        const updatedState = calculateMoveUpdate(
+                            gameState,
+                            tokenColor,
+                            tokenId,
+                            newPosition,
+                            finalDiceToConsume,
+                            availableDiceValues,
+                            false
+                        );
+
+                        const { id: __, ...stateToUpdate } = updatedState as any;
+                        transaction.update(gameRef, stateToUpdate);
+                        return { ...updatedState, id: gameId };
+                    } else {
+                        throw new Error("You need a 6 to move out!");
+                    }
+                }
+
+                // 5. HANDLE "NORMAL MOVE"
+                if (!diceToUse) {
+                    throw new Error("Please select a dice value!");
+                }
+
+                const moveAmount = diceToUse.reduce((sum, val) => sum + val, 0);
+                const { position: finalPosition, willBeSafe } = getProjectedPosition(token, moveAmount);
+                const homePos = HOME_POSITIONS[tokenColor];
+
+                // Overshoot check
+                if (willBeSafe || token.isSafePath) {
+                    if (finalPosition > homePos) {
+                        throw new Error(`You need exactly ${homePos - (token.position || 0)} to finish!`);
+                    }
+                }
+
+                const updatedState = calculateMoveUpdate(
+                    gameState,
+                    tokenColor,
+                    tokenId,
+                    finalPosition,
+                    diceToUse,
+                    availableDiceValues,
+                    willBeSafe
+                );
+
+                const { id: __, ...stateToUpdate } = updatedState as any;
+                transaction.update(gameRef, stateToUpdate);
+                return { ...updatedState, id: gameId };
+            });
+        } catch (error) {
+            console.error("Process Move Error:", error);
+            throw error;
+        }
+    },
+
+    selectDice: async (_: any, { gameId, diceValues }: { gameId: string, diceValues: number[] }, context: any) => {
+        const user = await context.getUserLocal();
+        if (!user) throw new Error("Unauthorized");
+
+        const db = admin.firestore();
+        const gameRef = db.collection('games').doc(gameId);
+
+        try {
+            return await db.runTransaction(async (transaction) => {
+                const doc = await transaction.get(gameRef);
+                if (!doc.exists) throw new Error("Game not found");
+
+                const gameState = doc.data() as LudoGameState;
+                if (gameState.currentTurn !== user.id) throw new Error("Not your turn");
+                if (gameState.status !== LudoStatus.PLAYING_TOKEN) throw new Error("Cannot select dice now");
+
+                // DICE VALIDATION: Subset and Consumption Check
+                if (diceValues.length > 0) {
+                    const availableRolls = [...gameState.diceValue];
+                    const usedRolls = [...(gameState.usedDiceValues || [])];
+
+                    // Subtract usedRolls from availableRolls to get current pool
+                    usedRolls.forEach(val => {
+                        const idx = availableRolls.indexOf(val);
+                        if (idx !== -1) availableRolls.splice(idx, 1);
+                    });
+
+                    // Check if diceValues are in availableRolls (handling duplicates)
+                    const pool = [...availableRolls];
+                    for (const diceVal of diceValues) {
+                        const idx = pool.indexOf(diceVal);
+                        if (idx === -1) {
+                            throw new Error(`Dice value ${diceVal} is not available or already used!`);
+                        }
+                        pool.splice(idx, 1);
+                    }
+                }
+
+                const updates: any = {
+                    activeDiceConfig: diceValues.length > 0 ? diceValues : null,
+                    updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                };
+
+                transaction.update(gameRef, updates);
+                const { id: __, ...stateData } = gameState as any;
+                return { ...stateData, ...updates, id: gameId };
+            });
+        } catch (error) {
+            console.error("Select Dice Error:", error);
             throw error;
         }
     }

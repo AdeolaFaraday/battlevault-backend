@@ -1,61 +1,95 @@
 enum GameType {
-    TOURNAMENT
-    FREE
-    INSTANT_COMPETITIVE
+  TOURNAMENT
+  FREE
+  INSTANT_COMPETITIVE
+}
+
+enum LudoStatus {
+  waiting
+  playingDice
+  playingToken
+  finished
+}
+
+enum LudoColor {
+  blue
+  yellow
+  green
+  red
+}
+
+type Token {
+  sn: Int!
+  color: LudoColor!
+  active: Boolean
+  position: Int
+  isSafePath: Boolean
+  isFinished: Boolean
+}
+
+type TokenMap {
+  blue: [Token!]!
+  yellow: [Token!]!
+  green: [Token!]!
+  red: [Token!]!
 }
 
 type LudoPlayer {
-    id: String!
-    name: String!
-    color: String!
-    tokens: [String!]
+  id: ID!
+  name: String!
+  avatarUrl: String
+  color: LudoColor!
+  tokens: [LudoColor!]!
+  capturedCount: Int
+  finishedCount: Int
 }
 
-type Game {
-    id: ID!
-    name: String!
-    type: GameType!
-    tournamentId: String
-    matchStage: String
-    players: [LudoPlayer!]!
-    currentTurn: String!
-    diceValue: [Int!]
-    isRolling: Boolean!
-    status: String!
-    createdAt: String
-    updatedAt: String
+type LudoGameState {
+  id: ID!
+  name: String!
+  type: GameType!
+  players: [LudoPlayer!]!
+  currentTurn: String! # Player ID
+  diceValue: [Int!]!
+  isRolling: Boolean
+  status: LudoStatus!
+  winner: String
+  tokens: TokenMap!
+  usedDiceValues: [Int!]!
+  activeDiceConfig: [Int!]
+  lastMoverId: String
+  createdAt: String
+  updatedAt: String
+}
+
+input MoveInput {
+  tokenId: Int!
+  color: LudoColor!
 }
 
 input LudoPlayerInput {
-    id: String
-    name: String!
-    color: String!
-    tokens: [String!]
+  id: String
+  name: String!
+  color: LudoColor!
+  avatarUrl: String
 }
 
 input CreateGameInput {
-    name: String!
-    type: GameType!
-    tournamentId: String
-    matchStage: String
-    players: [LudoPlayerInput!]
-}
-
-input UpdateGameInput {
-    name: String
-    players: [LudoPlayerInput!]
-    currentTurn: String
-    diceValue: [Int!]
-    isRolling: Boolean
-    status: String
+  name: String!
+  type: GameType!
+  tournamentId: String
+  matchStage: String
+  players: [LudoPlayerInput!]
 }
 
 extend type Query {
-    getGame(id: ID!): Game
+  getGame(id: ID!): LudoGameState
 }
 
 extend type Mutation {
-    createGame(input: CreateGameInput): Game
-    updateGame(id: ID!, input: UpdateGameInput): Game
-    joinGame(gameId: ID!, player: LudoPlayerInput!): Game
+  createGame(input: CreateGameInput): LudoGameState
+  rollDice(gameId: ID!): LudoGameState!
+  processMove(gameId: ID!, input: MoveInput!): LudoGameState!
+  joinGame(gameId: ID!, userId: ID!, name: String!): LudoGameState!
+  selectDice(gameId: ID!, diceValues: [Int!]!): LudoGameState!
 }
