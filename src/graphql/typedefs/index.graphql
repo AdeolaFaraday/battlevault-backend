@@ -6,7 +6,7 @@ type Query {
   _empty: String
 }
 
-union ResponseData = User | Game
+union ResponseData = User | LudoGameState
 
 type Response {
   statusCode: Int!
