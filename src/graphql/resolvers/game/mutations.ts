@@ -58,18 +58,22 @@ const gameMutations = {
                 if (!doc.exists) throw new Error("Game not found");
 
                 const gameState = doc.data() as LudoGameState;
-                if (gameState.players.length >= 4) throw new Error("Game is full");
+                if (gameState.players.length >= 2) throw new Error("Game is full (2 player mode)");
                 if (gameState.players.find(p => p.id === userId)) throw new Error("User already in game");
 
-                const colors = Object.values(LudoColor);
-                const usedColors = gameState.players.map(p => p.color);
-                const availableColor = colors.find(c => !usedColors.includes(c))!;
+                // Dual Color Assignment Logic
+                // Player 1 (Index 0): Red and Green
+                // Player 2 (Index 1): Blue and Yellow
+                const isFirstPlayer = gameState.players.length === 0;
+                const assignedColors = isFirstPlayer
+                    ? [LudoColor.RED, LudoColor.GREEN]
+                    : [LudoColor.BLUE, LudoColor.YELLOW];
 
                 const newPlayer = {
                     id: userId,
                     name,
-                    color: availableColor,
-                    tokens: [availableColor], // Requirements say tokens: [LudoColor!]! in LudoPlayer
+                    color: assignedColors[0], // Primary color (red or blue)
+                    tokens: assignedColors,   // Both colors controlled by this player
                     capturedCount: 0,
                     finishedCount: 0
                 };
@@ -80,7 +84,8 @@ const gameMutations = {
                     updatedAt: admin.firestore.FieldValue.serverTimestamp()
                 };
 
-                if (updatedPlayers.length >= 2 && gameState.status === LudoStatus.WAITING) {
+                // Game starts when 2nd player joins
+                if (updatedPlayers.length === 2 && gameState.status === LudoStatus.WAITING) {
                     updates.status = LudoStatus.PLAYING_DICE;
                     updates.currentTurn = updatedPlayers[0].id;
                 }
