@@ -3,6 +3,7 @@ import { GraphQLUpload } from "graphql-upload";
 
 import { userQueries, userMutations } from './user';
 import { gameQueries, gameMutations } from './game';
+import { tournamentQueries, tournamentMutations } from './tournament';
 
 
 const resolvers = {
@@ -16,16 +17,21 @@ const resolvers = {
             if (obj.currentTurn) {
                 return 'LudoGameState';
             }
+            if (obj.title) {
+                return 'Tournament';
+            }
             return null;
         }
     },
     Query: {
         ...userQueries,
         ...gameQueries,
+        ...tournamentQueries,
     },
     Mutation: {
         ...userMutations,
         ...gameMutations,
+        ...tournamentMutations,
     }
 }
 

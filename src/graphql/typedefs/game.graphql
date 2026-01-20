@@ -58,6 +58,7 @@ type LudoGameState {
   usedDiceValues: [Int!]!
   activeDiceConfig: [Int!]
   lastMoverId: String
+  startDate: String
   createdAt: String
   updatedAt: String
 }
@@ -79,6 +80,7 @@ input CreateGameInput {
   type: GameType!
   tournamentId: String
   matchStage: String
+  startDate: String
   players: [LudoPlayerInput!]
 }
 
