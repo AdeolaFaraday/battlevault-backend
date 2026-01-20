@@ -11,6 +11,23 @@ const gameQueries = {
         } catch (error) {
             throw error;
         }
+    },
+    getUpcomingGames: async (_: any, __: any, context: any) => {
+        try {
+            const user = await context.getUserLocal();
+
+            const filter: any = { status: 'waiting' };
+
+            if (user) {
+                // If authenticated, filter games where the user is a participant
+                filter['players.id'] = user.id;
+            }
+
+            // Return games matching the filter, sorted by startDate (upcoming first)
+            return await Game.find(filter).sort({ startDate: 1 });
+        } catch (error) {
+            throw error;
+        }
     }
 }
 

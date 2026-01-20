@@ -86,6 +86,7 @@ input CreateGameInput {
 
 extend type Query {
   getGame(id: ID!): LudoGameState
+  getUpcomingGames: [LudoGameState!]!
 }
 
 extend type Mutation {
