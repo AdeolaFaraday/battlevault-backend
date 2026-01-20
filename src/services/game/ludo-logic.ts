@@ -47,6 +47,7 @@ export interface LudoGameState {
     usedDiceValues: number[];
     activeDiceConfig: number[] | null;
     lastMoverId?: string;
+    startDate?: string;
 }
 
 export const HOME_POSITIONS: { [key: string]: number } = {

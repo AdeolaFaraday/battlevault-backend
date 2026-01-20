@@ -27,6 +27,7 @@ const gameSchema: Schema = new Schema(
                 return this.type === GameType.TOURNAMENT;
             }
         },
+        startDate: { type: Date, required: false },
         players: [
             {
                 id: {

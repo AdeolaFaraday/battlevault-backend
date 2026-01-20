@@ -1,0 +1,60 @@
+enum TournamentStatus {
+  UPCOMING
+  ONGOING
+  COMPLETED
+  CANCELLED
+}
+
+enum TournamentFrequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+  ONE_TIME
+}
+
+type Tournament {
+  _id: ID!
+  title: String!
+  description: String
+  gameType: String!
+  entryFee: Float
+  entryFeeCurrency: String!
+  prize: String!
+  status: TournamentStatus!
+  frequency: TournamentFrequency!
+  isPrivate: Boolean!
+  minRating: Int
+  registeredUsers: [User]
+  maxUsers: Int!
+  winner: User
+  startDate: String!
+  endDate: String
+  createdAt: String
+  updatedAt: String
+}
+
+input CreateTournamentInput {
+  title: String!
+  description: String
+  gameType: String!
+  entryFee: Float
+  entryFeeCurrency: String
+  prize: String!
+  frequency: TournamentFrequency
+  isPrivate: Boolean
+  password: String
+  minRating: Int
+  maxUsers: Int!
+  startDate: String!
+  endDate: String
+}
+
+extend type Query {
+  getTournaments: [Tournament]
+  getTournament(id: ID!): Tournament
+}
+
+extend type Mutation {
+  createTournament(input: CreateTournamentInput!): Tournament
+  registerForTournament(tournamentId: ID!, password: String): Tournament
+}

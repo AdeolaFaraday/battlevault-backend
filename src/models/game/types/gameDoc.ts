@@ -26,6 +26,7 @@ interface GameDoc extends Document, LudoGameState {
     type: GameType;
     tournamentId?: string;
     matchStage?: string;
+    startDate?: Date;
     createdAt: Date;
     updatedAt: Date;
 }
