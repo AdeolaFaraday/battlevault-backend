@@ -211,6 +211,8 @@ export const calculateMoveUpdate = (
     const remainingDiceCount = allAvailableDice.length - diceConsumed.length;
     const isTurnOver = remainingDiceCount === 0;
 
+    console.log({ isTurnOver })
+
     return {
         ...gameState,
         players: updatedPlayers,
@@ -219,6 +221,6 @@ export const calculateMoveUpdate = (
         activeDiceConfig: null,
         status: isTurnOver ? "playingDice" : "playingToken",
         currentTurn: isTurnOver ? getNextPlayerId(gameState.players, gameState.currentTurn) : gameState.currentTurn,
-        lastMoverId: isTurnOver ? gameState.currentTurn : undefined,
+        // lastMoverId: isTurnOver ? gameState.currentTurn : undefined,
     };
 };
