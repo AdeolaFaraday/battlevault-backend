@@ -193,6 +193,18 @@ const gameMutations = {
                 throw new Error(errorToThrow);
             }
 
+            // TEMPORARY: Quick MongoDB sync for testing (comment out after testing)
+            // try {
+            //     await Game.findByIdAndUpdate(
+            //         gameId,
+            //         { $set: finalState },
+            //         { upsert: true }
+            //     );
+            //     console.log(`[TEMP SYNC] Game ${gameId} synced to MongoDB`);
+            // } catch (syncError) {
+            //     console.error('[TEMP SYNC] MongoDB sync failed:', syncError);
+            // }
+
             return finalState;
         } catch (error) {
             console.error("Roll Dice Error:", error);
@@ -219,7 +231,6 @@ const gameMutations = {
                 const tokenColor = input.color;
                 const tokenId = input.tokenId;
                 const player = gameState.players.find((p) => p.id === user.id);
-
                 // 1. GATHER CONTEXT
                 if (!player || !player.tokens.includes(tokenColor)) {
                     throw new Error("Can't move this token!");

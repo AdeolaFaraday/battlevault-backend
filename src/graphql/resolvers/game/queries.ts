@@ -28,6 +28,20 @@ const gameQueries = {
         } catch (error) {
             throw error;
         }
+    },
+    getActiveGames: async (_: any, __: any, context: any) => {
+        try {
+            const user = await context.getUserLocal();
+            if (!user) throw new Error("Unauthorized - please login to view active games");
+
+            // Fetch games where user is a participant and status is playingDice or playingToken
+            return await Game.find({
+                'players.id': user.id,
+                status: { $in: ['playingDice', 'playingToken'] }
+            }).sort({ updatedAt: -1 }); // Most recently updated first
+        } catch (error) {
+            throw error;
+        }
     }
 }
 
