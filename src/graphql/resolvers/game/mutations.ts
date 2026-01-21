@@ -143,9 +143,14 @@ const gameMutations = {
         }
     }, true),
 
-    rollDice: async (_: any, { gameId }: { gameId: string }, context: any) => {
+    rollDice: authenticatedRequest(async (_: any, { gameId, name }: { gameId: string, name?: string }, context: any) => {
         const user = await context.getUserLocal();
-        if (!user) throw new Error("Unauthorized");
+
+        let userId = user?.id;
+        if (!userId) {
+            if (!name) throw new Error("Unauthorized: Name required if not logged in");
+            userId = `${name}-${gameId}`;
+        }
 
         const db = admin.firestore();
         const gameRef = db.collection('games').doc(gameId);
@@ -159,7 +164,7 @@ const gameMutations = {
                 if (!doc.exists) throw new Error("Game not found");
 
                 const gameState = doc.data() as LudoGameState;
-                if (gameState.currentTurn !== user.id) throw new Error("Not your turn");
+                if (gameState.currentTurn !== userId) throw new Error("Not your turn");
                 if (gameState.status !== LudoStatus.PLAYING_DICE) throw new Error("Cannot roll dice now");
 
                 const crypto = require("crypto");
@@ -168,7 +173,7 @@ const gameMutations = {
                     crypto.randomInt(1, 7)
                 ];
 
-                const player = gameState.players.find(p => p.id === user.id);
+                const player = gameState.players.find(p => p.id === userId);
                 const playerColors = player?.tokens || []; // Array of colors like ['red'] or ['blue']
 
                 // Aggregate all tokens controlled by this player
@@ -199,12 +204,12 @@ const gameMutations = {
                     const nextPlayerId = getNextPlayerId(gameState.players, gameState.currentTurn);
 
                     const updates: any = {
-                        diceValue: [],
+                        diceValue: results, // Persist the rolled dice so user sees them
                         status: LudoStatus.PLAYING_DICE,
                         currentTurn: nextPlayerId,
                         usedDiceValues: [],
                         activeDiceConfig: null,
-                        lastMoverId: user.id,
+                        lastMoverId: userId,
                         updatedAt: admin.firestore.FieldValue.serverTimestamp()
                     };
 
@@ -220,10 +225,10 @@ const gameMutations = {
                 const updates: any = {
                     diceValue: usableDice,
                     status: LudoStatus.PLAYING_TOKEN,
-                    currentTurn: user.id,
+                    currentTurn: userId,
                     usedDiceValues: [],
                     activeDiceConfig: null,
-                    lastMoverId: user.id,
+                    lastMoverId: userId,
                     updatedAt: admin.firestore.FieldValue.serverTimestamp()
                 };
 
@@ -253,11 +258,16 @@ const gameMutations = {
             console.error("Roll Dice Error:", error);
             throw error;
         }
-    },
+    }, true),
 
-    processMove: async (_: any, { gameId, input }: { gameId: string, input: any }, context: any) => {
+    processMove: authenticatedRequest(async (_: any, { gameId, input, name }: { gameId: string, input: any, name?: string }, context: any) => {
         const user = await context.getUserLocal();
-        if (!user) throw new Error("Unauthorized");
+
+        let userId = user?.id;
+        if (!userId) {
+            if (!name) throw new Error("Unauthorized: Name required if not logged in");
+            userId = `${name}-${gameId}`;
+        }
 
         const db = admin.firestore();
         const gameRef = db.collection('games').doc(gameId);
@@ -268,12 +278,12 @@ const gameMutations = {
                 if (!doc.exists) throw new Error("Game not found");
 
                 const gameState = doc.data() as LudoGameState;
-                if (gameState.currentTurn !== user.id) throw new Error("Not your turn");
+                if (gameState.currentTurn !== userId) throw new Error("Not your turn");
                 if (gameState.status !== LudoStatus.PLAYING_TOKEN) throw new Error("Cannot move now");
 
                 const tokenColor = input.color;
                 const tokenId = input.tokenId;
-                const player = gameState.players.find((p) => p.id === user.id);
+                const player = gameState.players.find((p) => p.id === userId);
                 // 1. GATHER CONTEXT
                 if (!player || !player.tokens.includes(tokenColor)) {
                     throw new Error("Can't move this token!");
@@ -363,11 +373,16 @@ const gameMutations = {
             console.error("Process Move Error:", error);
             throw error;
         }
-    },
+    }, true),
 
-    selectDice: async (_: any, { gameId, diceValues }: { gameId: string, diceValues: number[] }, context: any) => {
+    selectDice: authenticatedRequest(async (_: any, { gameId, diceValues, name }: { gameId: string, diceValues: number[], name?: string }, context: any) => {
         const user = await context.getUserLocal();
-        if (!user) throw new Error("Unauthorized");
+
+        let userId = user?.id;
+        if (!userId) {
+            if (!name) throw new Error("Unauthorized: Name required if not logged in");
+            userId = `${name}-${gameId}`;
+        }
 
         const db = admin.firestore();
         const gameRef = db.collection('games').doc(gameId);
@@ -378,7 +393,7 @@ const gameMutations = {
                 if (!doc.exists) throw new Error("Game not found");
 
                 const gameState = doc.data() as LudoGameState;
-                if (gameState.currentTurn !== user.id) throw new Error("Not your turn");
+                if (gameState.currentTurn !== userId) throw new Error("Not your turn");
                 if (gameState.status !== LudoStatus.PLAYING_TOKEN) throw new Error("Cannot select dice now");
 
                 // DICE VALIDATION: Subset and Consumption Check
@@ -416,7 +431,7 @@ const gameMutations = {
             console.error("Select Dice Error:", error);
             throw error;
         }
-    }
+    }, true)
 }
 
 export default gameMutations;
