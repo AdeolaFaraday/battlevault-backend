@@ -14,12 +14,13 @@ import {
     Token,
     getNextPlayerId
 } from "../../../services/game/ludo-logic";
+import authenticatedRequest from "../../authenticatedRequest";
 
 const INITIAL_TOKENS: TokenMap = {
-    blue: Array.from({ length: 4 }, (_, i) => ({ sn: i + 1, color: LudoColor.BLUE, active: false, position: -1, isSafePath: false, isFinished: false })),
-    yellow: Array.from({ length: 4 }, (_, i) => ({ sn: i + 1, color: LudoColor.YELLOW, active: false, position: -1, isSafePath: false, isFinished: false })),
-    green: Array.from({ length: 4 }, (_, i) => ({ sn: i + 1, color: LudoColor.GREEN, active: false, position: -1, isSafePath: false, isFinished: false })),
-    red: Array.from({ length: 4 }, (_, i) => ({ sn: i + 1, color: LudoColor.RED, active: false, position: -1, isSafePath: false, isFinished: false })),
+    blue: Array.from({ length: 4 }, (_, i) => ({ sn: i + 1, color: LudoColor.BLUE, active: false, position: 0, isSafePath: false, isFinished: false })),
+    yellow: Array.from({ length: 4 }, (_, i) => ({ sn: i + 1, color: LudoColor.YELLOW, active: false, position: 0, isSafePath: false, isFinished: false })),
+    green: Array.from({ length: 4 }, (_, i) => ({ sn: i + 1, color: LudoColor.GREEN, active: false, position: 0, isSafePath: false, isFinished: false })),
+    red: Array.from({ length: 4 }, (_, i) => ({ sn: i + 1, color: LudoColor.RED, active: false, position: 0, isSafePath: false, isFinished: false })),
 };
 
 const gameMutations = {
@@ -32,6 +33,7 @@ const gameMutations = {
                 diceValue: [],
                 usedDiceValues: [],
                 activeDiceConfig: [],
+                players: input.players || [], // Make players optional
                 currentTurn: input.players?.[0]?.id || "",
                 isRolling: false,
             };
@@ -48,7 +50,48 @@ const gameMutations = {
         }
     },
 
-    joinGame: async (_: any, { gameId, userId, name }: { gameId: string, userId: string, name: string }) => {
+    createFreeGame: async (_: any, { name }: { name: string }, context: any) => {
+        try {
+            const initialData = {
+                name: name,
+                type: 'FREE',
+                status: LudoStatus.WAITING,
+                tokens: INITIAL_TOKENS,
+                diceValue: [],
+                usedDiceValues: [],
+                activeDiceConfig: [],
+                players: [],
+                currentTurn: "",
+                isRolling: false,
+                startDate: new Date(), // Set start date to now for immediate visibility
+            };
+
+            const game = new Game(initialData);
+            const savedGame = await game.save();
+
+            const realtimeProvider = RealtimeProviderFactory.getProvider();
+            await realtimeProvider.createGameDocument(savedGame.id, initialData);
+
+            return savedGame;
+        } catch (error) {
+            throw error;
+        }
+    },
+
+    joinGame: authenticatedRequest(async (_: any, { gameId, userId, name }: { gameId: string, userId?: string, name: string }, context: any) => {
+        const user = await context.getUserLocal();
+
+        let finalUserId = userId;
+
+        if (user) {
+            finalUserId = user.id;
+        } else {
+            // If unauthenticated, derive ID from name and gameId as requested
+            finalUserId = `${name}-${gameId}`;
+        }
+
+        if (!finalUserId) throw new Error("User ID is required");
+
         const db = admin.firestore();
         const gameRef = db.collection('games').doc(gameId);
 
@@ -59,7 +102,7 @@ const gameMutations = {
 
                 const gameState = doc.data() as LudoGameState;
                 if (gameState.players.length >= 2) throw new Error("Game is full (2 player mode)");
-                if (gameState.players.find(p => p.id === userId)) throw new Error("User already in game");
+                if (gameState.players.find(p => p.id === finalUserId)) throw new Error("User already in game");
 
                 // Dual Color Assignment Logic
                 // Player 1 (Index 0): Red and Green
@@ -70,7 +113,7 @@ const gameMutations = {
                     : [LudoColor.BLUE, LudoColor.YELLOW];
 
                 const newPlayer = {
-                    id: userId,
+                    id: finalUserId,
                     name,
                     color: assignedColors[0], // Primary color (red or blue)
                     tokens: assignedColors,   // Both colors controlled by this player
@@ -98,7 +141,7 @@ const gameMutations = {
             console.error("Join Game Error:", error);
             throw error;
         }
-    },
+    }, true),
 
     rollDice: async (_: any, { gameId }: { gameId: string }, context: any) => {
         const user = await context.getUserLocal();
