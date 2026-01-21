@@ -92,8 +92,9 @@ extend type Query {
 
 extend type Mutation {
   createGame(input: CreateGameInput): LudoGameState
+  createFreeGame(name: String!): LudoGameState!
   rollDice(gameId: ID!): LudoGameState!
   processMove(gameId: ID!, input: MoveInput!): LudoGameState!
-  joinGame(gameId: ID!, userId: ID!, name: String!): LudoGameState!
+  joinGame(gameId: ID!, userId: ID, name: String!): LudoGameState!
   selectDice(gameId: ID!, diceValues: [Int!]!): LudoGameState!
 }

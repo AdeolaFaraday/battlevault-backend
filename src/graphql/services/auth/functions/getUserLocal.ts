@@ -10,17 +10,17 @@ export const getUserLocal = (req: any, res: any) => {
             return null;
         }
 
-        const decoded: any = verify(token, jwt.jwtSecret as string);
-        const user = await User.findById(decoded.id);
-        if (!user) {
+        try {
+            const decoded: any = verify(token, jwt.jwtSecret as string);
+            const user = await User.findById(decoded.id);
+            if (!user) {
+                return null;
+            }
+            return user;
+        } catch (error) {
             return null;
         }
 
-        // Other checks to be implemented
-        /*
-        1. If user has changed their password after the token was issued 
-        2. Other ones I can think of righ now
-        */
-        return user;
+        // Other checks can be implemented here
     };
 };
