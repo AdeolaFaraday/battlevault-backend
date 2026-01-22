@@ -24,7 +24,7 @@ const connectDB = async () => {
  */
 export const syncGameToMongo = functions.firestore
     .document('games/{gameId}')
-    .onUpdate(async (change, context) => {
+    .onUpdate(async (change: functions.Change<functions.firestore.DocumentSnapshot>, context: functions.EventContext) => {
         const gameId = context.params.gameId;
         const newData = change.after.data() || {};
         const oldData = change.before.data() || {};

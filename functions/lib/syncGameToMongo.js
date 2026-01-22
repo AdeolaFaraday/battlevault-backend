@@ -63,6 +63,14 @@ exports.syncGameToMongo = functions.firestore
         console.log(`No functional data change for game ${gameId}, skipping sync.`);
         return null;
     }
+    const oldStatus = oldData.status;
+    const newStatus = newData.status;
+    const isGameStart = oldStatus === 'waiting' && newStatus === 'playingDice';
+    const isGameEnd = newStatus === 'finished';
+    if (!isGameStart && !isGameEnd) {
+        console.log(`Skipping Mongo sync for game ${gameId}: Status transition '${oldStatus}' -> '${newStatus}' is not critical.`);
+        return null;
+    }
     try {
         await connectDB();
         const { createdAt, updatedAt, id: _, ...sanitizedData } = newData;
