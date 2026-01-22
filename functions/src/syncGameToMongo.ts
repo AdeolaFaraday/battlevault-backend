@@ -39,6 +39,20 @@ export const syncGameToMongo = functions.firestore
             return null;
         }
 
+        // 2. CRITICAL STATE CHECK
+        // Only sync if Game Start (WAITING -> PLAYING_DICE) or Game End (-> FINISHED)
+        const oldStatus = oldData.status;
+        const newStatus = newData.status;
+
+        const isGameStart = oldStatus === 'waiting' && newStatus === 'playingDice';
+        // Check if we are transitioning INTO finished state (or already in it and updating, though typically it happens once)
+        const isGameEnd = newStatus === 'finished';
+
+        if (!isGameStart && !isGameEnd) {
+            console.log(`Skipping Mongo sync for game ${gameId}: Status transition '${oldStatus}' -> '${newStatus}' is not critical.`);
+            return null;
+        }
+
         try {
             await connectDB();
 
