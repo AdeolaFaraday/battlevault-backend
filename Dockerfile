@@ -26,4 +26,4 @@ RUN npm ci --omit=dev
 # Copy the built application from the builder stage
 COPY --from=builder /app/dist ./dist
 
-CMD ["npm", "start"]
+ENTRYPOINT ["node", "dist/app.js"]
