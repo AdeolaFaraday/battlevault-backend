@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "main": "app.ts",
+  "engines": {
+    "node": ">=22.13.1"
+  },
   "scripts": {
     "dev": "nodemon --watch 'src/**/*' --ext ts,graphql --exec ts-node -r tsconfig-paths/register src/app.ts",
     "build": "tsc --project tsconfig.json && cp -r ./src/graphql/typedefs ./dist/graphql",
