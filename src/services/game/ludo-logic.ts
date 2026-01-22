@@ -131,7 +131,8 @@ export const calculateMoveUpdate = (
     const currentTokens = gameState.tokens[color] || [];
     const existingToken = currentTokens.find((t: Token) => t.sn === tokenSn);
     const players = gameState.players || [];
-    const currentPlayerIndex = players.findIndex((p) => p.color === color);
+    // Identify player by token ownership (robust for dual-color mode)
+    const currentPlayerIndex = players.findIndex((p) => p.tokens.includes(color));
 
     if (!existingToken) throw new Error("Token not found");
 
@@ -207,11 +208,61 @@ export const calculateMoveUpdate = (
     // Update Current Player Tokens in Map
     updatedTokensMap[color] = currentTokens.map((t) => (t.sn === tokenSn ? updatedToken : t));
 
+    // Check for Win Condition (All tokens finished)
+    // 1. Identify valid player (already found above)
+    const player = players[currentPlayerIndex];
+
+    let allTokensFinished = false;
+
+    if (player) {
+        // 2. Check ALL colors controlled by this player (e.g. Red AND Green)
+        allTokensFinished = player.tokens.every(tokenColor => {
+            // Use updated map for the current color, or existing map for others
+            const tokens = updatedTokensMap[tokenColor] || [];
+            return tokens.length > 0 && tokens.every(t => t.isFinished);
+        });
+    }
+
+    if (allTokensFinished) {
+        return {
+            ...gameState,
+            players: updatedPlayers,
+            tokens: updatedTokensMap,
+            usedDiceValues: [...(gameState.usedDiceValues || []), ...diceConsumed],
+            activeDiceConfig: null,
+            status: LudoStatus.FINISHED,
+            winner: player?.id,
+            currentTurn: gameState.currentTurn,
+        };
+    }
+
     // Determine if Turn is Over
     const remainingDiceCount = allAvailableDice.length - diceConsumed.length;
-    const isTurnOver = remainingDiceCount === 0;
+    let isTurnOver = remainingDiceCount === 0;
 
-    console.log({ isTurnOver })
+    if (!isTurnOver) {
+        // Calculate distinct remaining dice values
+        const remainingDiceValues = [...allAvailableDice];
+        diceConsumed.forEach(val => {
+            const idx = remainingDiceValues.indexOf(val);
+            if (idx !== -1) remainingDiceValues.splice(idx, 1);
+        });
+
+        // Check availability against UPDATED token state
+        // We use the player's tokens from the updated map
+        const playerTokens = updatedTokensMap[color];
+
+        // If NO remaining dice can be formulated into a valid move for ANY token, turn is over
+        const canMakeAnyMove = remainingDiceValues.some(diceVal =>
+            isDiceValueUsable(diceVal, playerTokens, color)
+        );
+
+        if (!canMakeAnyMove) {
+            isTurnOver = true;
+        }
+    }
+
+    console.log({ isTurnOver, remainingDiceCount });
 
     return {
         ...gameState,

@@ -199,6 +199,8 @@ const gameMutations = {
                     });
                 }
 
+                console.log({ usableDice });
+
                 if (usableDice.length === 0) {
                     // No moves possible, rotate turn and throw error to frontend
                     const nextPlayerId = getNextPlayerId(gameState.players, gameState.currentTurn);
@@ -223,7 +225,7 @@ const gameMutations = {
                 // If some dice were unusable, we effectively "discard" them by only setting the usable ones
                 // Note: Frontend will handle the toast info if needed based on the response
                 const updates: any = {
-                    diceValue: usableDice,
+                    diceValue: results, // SHOW ALL DICE (Trusted View) - filtering happens in process logic
                     status: LudoStatus.PLAYING_TOKEN,
                     currentTurn: userId,
                     usedDiceValues: [],
@@ -272,8 +274,10 @@ const gameMutations = {
         const db = admin.firestore();
         const gameRef = db.collection('games').doc(gameId);
 
+        let errorToThrow: string | null = null;
+
         try {
-            return await db.runTransaction(async (transaction) => {
+            const resultState = await db.runTransaction(async (transaction) => {
                 const doc = await transaction.get(gameRef);
                 if (!doc.exists) throw new Error("Game not found");
 
@@ -365,10 +369,24 @@ const gameMutations = {
                     willBeSafe
                 );
 
+                // CHECK FOR FORCED TURN END (Unusable Remaining Dice)
+                const remainingCtxDice = availableDiceValues.length - diceToUse.length;
+                if (remainingCtxDice > 0 && updatedState.currentTurn !== userId) {
+                    errorToThrow = "Turn skipped! Remaining dice cannot be used by any token.";
+                }
+
                 const { id: __, ...stateToUpdate } = updatedState as any;
                 transaction.update(gameRef, stateToUpdate);
                 return { ...updatedState, id: gameId };
             });
+
+            if (errorToThrow) {
+                // Ensure we don't block the actual successful move/update event
+                // But we want to notify the client
+                throw new Error(errorToThrow);
+            }
+
+            return resultState;
         } catch (error) {
             console.error("Process Move Error:", error);
             throw error;
