@@ -25,6 +25,10 @@ export const generateSignUpUserData = (data: any) => {
     lastName,
     avatar: data?.picture,
     email: data?.email,
-    emailVerifiedAt: new Date()
+    emailVerifiedAt: new Date(),
+    country: {
+      countryName: 'Nigeria',
+      countryCode: 'NG',
+    },
   }
 }

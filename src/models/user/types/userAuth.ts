@@ -1,4 +1,4 @@
-import { TGender } from "./userDoc";
+import { ICountry, TGender } from "./userDoc";
 
 
 export interface CreateUserInputs {
@@ -6,7 +6,7 @@ export interface CreateUserInputs {
   firstName: string;
   lastName: string;
   email: string;
-  password: string;
+  password?: string;
   avatar?: string;
   totalGamesPlayed?: number;
   emailVerifiedAt?: Date;
@@ -14,4 +14,5 @@ export interface CreateUserInputs {
   totalLosses?: number;
   experiencePoints?: number;
   gender?: TGender;
+  country?: ICountry;
 }
