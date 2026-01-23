@@ -320,19 +320,58 @@ const gameMutations = {
                 if (!token.active) {
                     const hasSix = diceToUse?.includes(6) || (!diceToUse && availableDiceValues.includes(6));
                     if (hasSix) {
-                        const finalDiceToConsume = diceToUse || [6];
+                        let finalDiceToConsume = diceToUse || [6];
+
+                        // NEW RULE: Auto-consume extra dice if no other token can use them
+                        // Requirement: Only apply to non-6 dice (user might want to keep other 6s)
+                        const pool = [...availableDiceValues];
+                        // Remove dice already in finalDiceToConsume from the pool
+                        finalDiceToConsume.forEach(val => {
+                            const idx = pool.indexOf(val);
+                            if (idx !== -1) pool.splice(idx, 1);
+                        });
+
+                        for (const d of pool) {
+                            if (d === 6) continue; // NEVER auto-consume a 6 per user request
+
+                            // Check if ANY OTHER token (owned by player) can use this dice d
+                            const canOthersUse = player.tokens.some(color => {
+                                const tokensOfColor = gameState.tokens[color] || [];
+                                const otherTokens = tokensOfColor.filter(t => !(t.sn === tokenId && t.color === tokenColor));
+                                return getMovableTokens(d, otherTokens, color).length > 0;
+                            });
+
+                            if (!canOthersUse) {
+                                // Ensure the token being activated can use this dice from START_PATHS
+                                const startPos = START_PATHS[tokenColor];
+                                const { position: proj, willBeSafe: wbs } = getProjectedPosition(
+                                    { ...token, active: true, position: startPos, isSafePath: false },
+                                    d
+                                );
+                                const homePos = HOME_POSITIONS[tokenColor];
+                                if (!wbs || proj <= homePos) {
+                                    finalDiceToConsume.push(d);
+                                }
+                            }
+                        }
+
                         const totalMoveAmount = finalDiceToConsume.reduce((sum, val) => sum + val, 0);
                         const extraSteps = totalMoveAmount - 6;
-                        const newPosition = START_PATHS[tokenColor] + extraSteps;
+
+                        // Use getProjectedPosition to handle potential gate crossing or overshoots
+                        const { position: finalPosition, willBeSafe } = getProjectedPosition(
+                            { ...token, active: true, position: START_PATHS[tokenColor], isSafePath: false },
+                            extraSteps
+                        );
 
                         const updatedState = calculateMoveUpdate(
                             gameState,
                             tokenColor,
                             tokenId,
-                            newPosition,
+                            finalPosition,
                             finalDiceToConsume,
                             availableDiceValues,
-                            false
+                            willBeSafe
                         );
 
                         const { id: __, ...stateToUpdate } = updatedState as any;
