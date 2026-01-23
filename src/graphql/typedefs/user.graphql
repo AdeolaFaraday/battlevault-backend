@@ -4,12 +4,23 @@ enum EGender {
   OTHER
 }
 
+type Country {
+  countryName: String
+  countryCode: String
+}
+
+input CountryInput {
+  countryName: String
+  countryCode: String
+}
+
 type User {
     _id: ID!
   userName: String
   firstName: String
   lastName: String
   email: String
+  country: Country
 }
 
 input UserInput {
@@ -20,6 +31,7 @@ input UserInput {
   password: String!
   avatar: String
   gender: EGender
+  country: CountryInput
 }
 
 type Query {

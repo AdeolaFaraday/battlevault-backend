@@ -14,7 +14,7 @@ const userSchema: Schema = new Schema(
             type: String,
             required: true,
             trim: true,
-            maxlength: 25,
+            maxlength: 50,
         },
         firstName: {
             type: String,
@@ -58,6 +58,10 @@ const userSchema: Schema = new Schema(
         gender: {
             type: String,
             enum: ['MALE', 'FEMALE', 'OTHER'],
+        },
+        country: {
+            countryName: { type: String },
+            countryCode: { type: String },
         },
         lastLogin: { type: Date },
         totalGamesPlayed: { type: Number, default: 0 },

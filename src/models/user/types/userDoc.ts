@@ -1,5 +1,10 @@
 export type TGender = 'MALE' | 'FEMALE' | 'OTHER';
 
+export interface ICountry {
+    countryName: string;
+    countryCode: string;
+}
+
 export interface IUser {
     userName: string;
     firstName: string;
@@ -14,6 +19,7 @@ export interface IUser {
     totalWins?: number;
     totalLosses?: number;
     experiencePoints?: number;
+    country?: ICountry;
 }
 
 export default interface UserDoc extends IUser, Document {
