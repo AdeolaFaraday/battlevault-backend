@@ -45,18 +45,19 @@ const App = async () => {
     app.use(cookieParser());
     app.set('trust proxy', 1);
     console.log({ ENV: process.env.NODE_ENV });
+    const isProd = process.env.NODE_ENV === "production";
     app.use(
         session({
             name: 'cookie',
             secret: appEnv.db.sessionSecret as string,
             resave: false,
             saveUninitialized: true,
-            // proxy: false,
+            proxy: true,
             // secure: process.env.NODE_ENV !== "development",
             cookie: {
                 maxAge: 1000 * 60 * 60 * 24, // One day
-                sameSite: 'lax',
-                secure: process.env.NODE_ENV !== "development",
+                sameSite: isProd ? 'none' : 'lax',
+                secure: isProd,
             },
             // store,
             unset: 'destroy',
