@@ -8,8 +8,8 @@ import cookieParser from 'cookie-parser';
 import graphqlServer from './graphql';
 import { expressPlayground } from "graphql-playground-middleware";
 import loadAppEnvs, { env, port, db, whitelist } from "./config/environment";
-// import startDB from "./startup/db";
-// import RealtimeProviderFactory from "./services/realtime";
+import startDB from "./startup/db";
+import RealtimeProviderFactory from "./services/realtime";
 
 
 const App = async () => {
@@ -22,7 +22,7 @@ const App = async () => {
     const PORT = process.env.PORT || appEnv.port || 8080;
 
     // Initialize realtime provider
-    // await RealtimeProviderFactory.initialize();
+    await RealtimeProviderFactory.initialize();
 
     const corsOptions = {
         origin(origin: string | undefined, callback: (arg0: Error | null, arg1: boolean) => void) {
@@ -92,7 +92,7 @@ const App = async () => {
     });
 
     graphqlHttpServer.listen(Number(PORT), '0.0.0.0', async () => {
-        // startDB(appEnv.db.uri);
+        startDB(appEnv.db.uri);
         console.log(
             `Server started on http://localhost:${appEnv.port}${graphqlServer.graphqlPath}`
         );
