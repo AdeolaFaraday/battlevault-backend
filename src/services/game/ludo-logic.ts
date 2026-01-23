@@ -260,7 +260,8 @@ export const calculateMoveUpdate = (
         }
     }
 
-    console.log({ isTurnOver, remainingDiceCount });
+    const isDoubleSix = gameState.diceValue.length === 2 && gameState.diceValue.every(v => v === 6);
+    const grantsExtraTurn = isDoubleSix;
 
     return {
         ...gameState,
@@ -269,7 +270,7 @@ export const calculateMoveUpdate = (
         usedDiceValues: [...(gameState.usedDiceValues || []), ...diceConsumed],
         activeDiceConfig: null,
         status: isTurnOver ? "playingDice" : "playingToken",
-        currentTurn: isTurnOver ? getNextPlayerId(gameState.players, gameState.currentTurn) : gameState.currentTurn,
+        currentTurn: (isTurnOver && !grantsExtraTurn) ? getNextPlayerId(gameState.players, gameState.currentTurn) : gameState.currentTurn,
         // lastMoverId: isTurnOver ? gameState.currentTurn : undefined,
     };
 };
