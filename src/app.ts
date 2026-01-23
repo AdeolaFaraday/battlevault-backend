@@ -19,6 +19,7 @@ const App = async () => {
     }
     const app = express();
     const graphqlHttpServer = httpServer.createServer(app);
+    const PORT = process.env.PORT || appEnv.port || 8080;
 
     // Initialize realtime provider
     // await RealtimeProviderFactory.initialize();
@@ -90,7 +91,7 @@ const App = async () => {
         res.send(`route not found for ${req.originalUrl}`)
     });
 
-    graphqlHttpServer.listen({ port: appEnv.port, host: '0.0.0.0' }, async () => {
+    graphqlHttpServer.listen(Number(PORT), '0.0.0.0', async () => {
         // startDB(appEnv.db.uri);
         console.log(
             `Server started on http://localhost:${appEnv.port}${graphqlServer.graphqlPath}`
