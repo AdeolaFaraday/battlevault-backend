@@ -131,8 +131,8 @@ export const calculateMoveUpdate = (
     const currentTokens = gameState.tokens[color] || [];
     const existingToken = currentTokens.find((t: Token) => t.sn === tokenSn);
     const players = gameState.players || [];
-    // Identify player by token ownership (robust for dual-color mode)
-    const currentPlayerIndex = players.findIndex((p) => p.tokens.includes(color));
+    const currentPlayerIndex = players.findIndex((p: LudoPlayer) => p.tokens.includes(color));
+    const player = currentPlayerIndex !== -1 ? players[currentPlayerIndex] : null;
 
     if (!existingToken) throw new Error("Token not found");
 
@@ -154,7 +154,10 @@ export const calculateMoveUpdate = (
 
     if (!isSafePath) {
         Object.keys(updatedTokensMap).forEach((key) => {
-            if (key !== color) {
+            // Only check colors NOT owned by the current player
+            const isOpponentColor = player ? !player.tokens.includes(key) : key !== color;
+
+            if (isOpponentColor) {
                 const opponentTokens = [...updatedTokensMap[key]];
                 const victimIndex = opponentTokens.findIndex(
                     (t) => t.active && !t.isSafePath && t.position === newPos
@@ -164,7 +167,7 @@ export const calculateMoveUpdate = (
                     killedOpponent = { color: key, sn: victim.sn };
 
                     // Reset Victim
-                    opponentTokens[victimIndex] = { ...victim, active: false, position: -1, isSafePath: false };
+                    opponentTokens[victimIndex] = { ...victim, active: false, position: 0, isSafePath: false };
                     updatedTokensMap[key] = opponentTokens;
 
                     // KILL = FINISH RULE
@@ -209,14 +212,11 @@ export const calculateMoveUpdate = (
     updatedTokensMap[color] = currentTokens.map((t) => (t.sn === tokenSn ? updatedToken : t));
 
     // Check for Win Condition (All tokens finished)
-    // 1. Identify valid player (already found above)
-    const player = players[currentPlayerIndex];
-
     let allTokensFinished = false;
 
     if (player) {
         // 2. Check ALL colors controlled by this player (e.g. Red AND Green)
-        allTokensFinished = player.tokens.every(tokenColor => {
+        allTokensFinished = player.tokens.every((tokenColor: string) => {
             // Use updated map for the current color, or existing map for others
             const tokens = updatedTokensMap[tokenColor] || [];
             return tokens.length > 0 && tokens.every(t => t.isFinished);
@@ -250,7 +250,7 @@ export const calculateMoveUpdate = (
 
         // If NO remaining dice can be formulated into a valid move for ANY token across ALL colors owned by the player, turn is over
         const canMakeAnyMove = remainingDiceValues.some(diceVal =>
-            player?.tokens.some(tokenColor =>
+            player?.tokens.some((tokenColor: string) =>
                 isDiceValueUsable(diceVal, updatedTokensMap[tokenColor] || [], tokenColor)
             ) ?? isDiceValueUsable(diceVal, updatedTokensMap[color] || [], color)
         );
