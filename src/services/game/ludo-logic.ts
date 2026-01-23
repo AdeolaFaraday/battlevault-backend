@@ -248,13 +248,11 @@ export const calculateMoveUpdate = (
             if (idx !== -1) remainingDiceValues.splice(idx, 1);
         });
 
-        // Check availability against UPDATED token state
-        // We use the player's tokens from the updated map
-        const playerTokens = updatedTokensMap[color];
-
-        // If NO remaining dice can be formulated into a valid move for ANY token, turn is over
+        // If NO remaining dice can be formulated into a valid move for ANY token across ALL colors owned by the player, turn is over
         const canMakeAnyMove = remainingDiceValues.some(diceVal =>
-            isDiceValueUsable(diceVal, playerTokens, color)
+            player?.tokens.some(tokenColor =>
+                isDiceValueUsable(diceVal, updatedTokensMap[tokenColor] || [], tokenColor)
+            ) ?? isDiceValueUsable(diceVal, updatedTokensMap[color] || [], color)
         );
 
         if (!canMakeAnyMove) {
@@ -262,7 +260,8 @@ export const calculateMoveUpdate = (
         }
     }
 
-    console.log({ isTurnOver, remainingDiceCount });
+    const isDoubleSix = gameState.diceValue.length === 2 && gameState.diceValue.every(v => v === 6);
+    const grantsExtraTurn = isDoubleSix;
 
     return {
         ...gameState,
@@ -271,7 +270,7 @@ export const calculateMoveUpdate = (
         usedDiceValues: [...(gameState.usedDiceValues || []), ...diceConsumed],
         activeDiceConfig: null,
         status: isTurnOver ? "playingDice" : "playingToken",
-        currentTurn: isTurnOver ? getNextPlayerId(gameState.players, gameState.currentTurn) : gameState.currentTurn,
+        currentTurn: (isTurnOver && !grantsExtraTurn) ? getNextPlayerId(gameState.players, gameState.currentTurn) : gameState.currentTurn,
         // lastMoverId: isTurnOver ? gameState.currentTurn : undefined,
     };
 };
