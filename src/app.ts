@@ -48,7 +48,7 @@ const App = async () => {
     const isProd = process.env.NODE_ENV === "production";
     app.use(
         session({
-            name: 'user_cookie',
+            name: 'cookie',
             secret: appEnv.db.sessionSecret as string,
             resave: false,
             saveUninitialized: true,
