@@ -8,7 +8,12 @@ import User from "../../../../models/user/user";
 const jwtSecret: any = jwtEnv.jwtSecret;
 const jwtExp: any = jwtEnv.jwtExp;
 const setCookie = (authToken: any, user: any, res: any) => {
-    res.cookie('user_token', authToken);
+    res.cookie('user_token', authToken, {
+        httpOnly: true,
+        secure: true,      // Cloud Run = HTTPS
+        sameSite: 'none',  // Cross-origin
+        maxAge: 24 * 60 * 60 * 1000,
+    });
     return;
 };
 
