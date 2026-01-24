@@ -5,8 +5,7 @@ import { jwt } from '../../../../config/environment'
 export const getUserLocal = (req: any, res: any) => {
     return async () => {
         // Gets the currently logged in user from the request token;
-        const token = req.cookies?.user_token || req.cookies?.admin_token;
-        console.log({ USER_TOKEN: token, REQ: req.cookies });
+        const token = req.cookies?.cookie || req.cookies?.user_token || req.cookies?.admin_token;
         if (!token) {
             return null;
         }
