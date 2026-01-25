@@ -332,7 +332,16 @@ const gameMutations = {
                         });
 
                         for (const d of pool) {
-                            if (d === 6) continue; // NEVER auto-consume a 6 per user request
+                            // Rule: Auto-consume extra dice if no other token can use them
+                            // User request: "not 6,6 because 6,6 you can move two token out, thats if you have inactive tokens that can use it"
+                            // This means if d is 6, we only auto-consume if NO other tokens are at home.
+
+                            const hasOtherTokensAtHome = player.tokens.some(color => {
+                                const tokensOfColor = gameState.tokens[color] || [];
+                                return tokensOfColor.some(t => !t.active && !t.isFinished && !(t.sn === tokenId && t.color === tokenColor));
+                            });
+
+                            if (d === 6 && hasOtherTokensAtHome) continue;
 
                             // Check if ANY OTHER token (owned by player) can use this dice d
                             const canOthersUse = player.tokens.some(color => {
@@ -384,10 +393,76 @@ const gameMutations = {
 
                 // 5. HANDLE "NORMAL MOVE"
                 if (!diceToUse) {
+                    // If no dice selected, check if only THIS token can move with ANY of the available dice
+                    const canOtherTokensMoveWithAny = player.tokens.some(color => {
+                        const tokensOfColor = gameState.tokens[color] || [];
+                        const otherTokens = tokensOfColor.filter(t => !(t.sn === tokenId && t.color === tokenColor));
+                        return availableDiceValues.some(d => getMovableTokens(d, otherTokens, color).length > 0);
+                    });
+
+                    if (!canOtherTokensMoveWithAny) {
+                        // Only this token can move, so use ALL available dice that are valid for it
+                        diceToUse = [];
+                        let tempToken = { ...token };
+                        const sortedPool = [...availableDiceValues].sort((a, b) => b - a); // Try larger first? Or just consume all that don't overshoot.
+
+                        for (const d of sortedPool) {
+                            const { position: projPos, willBeSafe: wbs } = getProjectedPosition(tempToken, d);
+                            const hPos = HOME_POSITIONS[tokenColor];
+                            if (!wbs || projPos <= hPos) {
+                                diceToUse.push(d);
+                                tempToken = { ...tempToken, position: projPos, isSafePath: wbs || tempToken.isSafePath };
+                            }
+                        }
+                    }
+                }
+
+                if (!diceToUse || diceToUse.length === 0) {
                     throw new Error("Please select a dice value!");
                 }
 
-                const moveAmount = diceToUse.reduce((sum, val) => sum + val, 0);
+                // Even if some dice were selected, we check if remaining dice are useless for others and safe for this one
+                const finalDiceToConsume = [...diceToUse];
+                const remainingPool = [...availableDiceValues];
+                finalDiceToConsume.forEach(val => {
+                    const idx = remainingPool.indexOf(val);
+                    if (idx !== -1) remainingPool.splice(idx, 1);
+                });
+
+                let currentTempTokenForNormal = { ...token };
+                // Calculate position after initial diceToUse
+                const { position: startPos, willBeSafe: startWbs } = getProjectedPosition(token, diceToUse.reduce((s, v) => s + v, 0));
+                currentTempTokenForNormal.position = startPos;
+                currentTempTokenForNormal.isSafePath = startWbs || token.isSafePath;
+
+                for (const d of remainingPool) {
+                    // Check if d is 6 and if we have tokens at home
+                    const hasTokensAtHome = player.tokens.some(color => {
+                        const tokensOfColor = gameState.tokens[color] || [];
+                        return tokensOfColor.some(t => !t.active && !t.isFinished);
+                    });
+
+                    if (d === 6 && hasTokensAtHome) continue;
+
+                    // Check if others can use it
+                    const canOthersUse = player.tokens.some(color => {
+                        const tokensOfColor = gameState.tokens[color] || [];
+                        const otherTokens = tokensOfColor.filter(t => !(t.sn === tokenId && t.color === tokenColor));
+                        return getMovableTokens(d, otherTokens, color).length > 0;
+                    });
+
+                    if (!canOthersUse) {
+                        const { position: proj, willBeSafe } = getProjectedPosition(currentTempTokenForNormal, d);
+                        const hPos = HOME_POSITIONS[tokenColor];
+                        if (!willBeSafe || proj <= hPos) {
+                            finalDiceToConsume.push(d);
+                            currentTempTokenForNormal.position = proj;
+                            currentTempTokenForNormal.isSafePath = willBeSafe || currentTempTokenForNormal.isSafePath;
+                        }
+                    }
+                }
+
+                const moveAmount = finalDiceToConsume.reduce((sum, val) => sum + val, 0);
                 const { position: finalPosition, willBeSafe } = getProjectedPosition(token, moveAmount);
                 const homePos = HOME_POSITIONS[tokenColor];
 
@@ -403,7 +478,7 @@ const gameMutations = {
                     tokenColor,
                     tokenId,
                     finalPosition,
-                    diceToUse,
+                    finalDiceToConsume,
                     availableDiceValues,
                     willBeSafe
                 );
