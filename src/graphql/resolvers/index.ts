@@ -11,15 +11,13 @@ const resolvers = {
     Upload: GraphQLUpload,
     ResponseData: {
         __resolveType(obj: any, _: any, __: any) {
-            if (obj.email) {
-                return 'User';
-            }
-            if (obj.currentTurn) {
-                return 'LudoGameState';
-            }
-            if (obj.title) {
-                return 'Tournament';
-            }
+            if (obj.tournaments) return 'TournamentList';
+            if (obj.games) return 'GameList';
+            if (obj.email) return 'User';
+            if (obj.currentTurn || obj.tokens) return 'LudoGameState';
+            if (obj.title) return 'Tournament';
+
+            console.error('[GraphQL Union Resolver] Failed to resolve type for keys:', Object.keys(obj));
             return null;
         }
     },

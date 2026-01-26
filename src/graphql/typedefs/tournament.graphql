@@ -50,11 +50,11 @@ input CreateTournamentInput {
 }
 
 extend type Query {
-  getTournaments: [Tournament]
-  getTournament(id: ID!): Tournament
+  getTournaments: Response
+  getTournament(id: ID!): Response
 }
 
 extend type Mutation {
-  createTournament(input: CreateTournamentInput!): Tournament
-  registerForTournament(tournamentId: ID!, password: String): Tournament
+  createTournament(input: CreateTournamentInput!): Response
+  registerForTournament(tournamentId: ID!, password: String): Response
 }

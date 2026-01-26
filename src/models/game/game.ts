@@ -38,7 +38,7 @@ const gameSchema: Schema = new Schema(
                 color: {
                     type: String,
                     required: true,
-                    uppercase: true // Enforce colors to be All caps
+                    lowercase: true // Enforce colors to be lowercase
                 },
                 tokens: [{ type: String }]
             }
@@ -50,6 +50,15 @@ const gameSchema: Schema = new Schema(
             type: String,
             default: 'playingDice'
         },
+        tokens: {
+            blue: [{ type: Schema.Types.Mixed }],
+            yellow: [{ type: Schema.Types.Mixed }],
+            green: [{ type: Schema.Types.Mixed }],
+            red: [{ type: Schema.Types.Mixed }]
+        },
+        usedDiceValues: [{ type: Number }],
+        activeDiceConfig: [{ type: Number }],
+        lastMoverId: { type: String }
     },
     {
         timestamps: true,

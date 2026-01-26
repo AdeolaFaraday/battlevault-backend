@@ -19,6 +19,7 @@ export interface LudoGameState {
     diceValue: number[];
     isRolling: boolean;
     status: string;
+    tokens?: any; // Add tokens field
 }
 
 interface GameDoc extends Document, LudoGameState {

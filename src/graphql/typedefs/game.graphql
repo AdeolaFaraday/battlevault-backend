@@ -45,7 +45,7 @@ type LudoPlayer {
 }
 
 type LudoGameState {
-  id: ID!
+  _id: ID!
   name: String!
   type: GameType!
   players: [LudoPlayer!]!
@@ -54,7 +54,7 @@ type LudoGameState {
   isRolling: Boolean
   status: LudoStatus!
   winner: String
-  tokens: TokenMap!
+  tokens: TokenMap
   usedDiceValues: [Int!]!
   activeDiceConfig: [Int!]
   lastMoverId: String
@@ -85,16 +85,16 @@ input CreateGameInput {
 }
 
 extend type Query {
-  getGame(id: ID!): LudoGameState
-  getUpcomingGames: [LudoGameState!]!
-  getActiveGames: [LudoGameState!]!
+  getGame(id: ID!): Response
+  getUpcomingGames: Response!
+  getActiveGames: Response!
 }
 
 extend type Mutation {
-  createGame(input: CreateGameInput): LudoGameState
-  createFreeGame(name: String!): LudoGameState!
-  rollDice(gameId: ID!, name: String): LudoGameState!
-  processMove(gameId: ID!, input: MoveInput!, name: String): LudoGameState!
-  joinGame(gameId: ID!, userId: ID, name: String!): LudoGameState!
-  selectDice(gameId: ID!, diceValues: [Int!]!, name: String): LudoGameState!
+  createGame(input: CreateGameInput): Response
+  createFreeGame(name: String!): Response!
+  rollDice(gameId: ID!, name: String): Response!
+  processMove(gameId: ID!, input: MoveInput!, name: String): Response!
+  joinGame(gameId: ID!, userId: ID, name: String!): Response!
+  selectDice(gameId: ID!, diceValues: [Int!]!, name: String): Response!
 }
