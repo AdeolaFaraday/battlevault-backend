@@ -1,21 +1,11 @@
-import Tournament from "../../../models/tournament/tournament";
+import TournamentService from "../../services/tournament/tournament";
 
 const tournamentQueries = {
     getTournaments: async () => {
-        try {
-            return await Tournament.find().populate('registeredUsers winner');
-        } catch (error) {
-            throw error;
-        }
+        return await TournamentService.getTournaments();
     },
     getTournament: async (_: any, { id }: { id: string }) => {
-        try {
-            const tournament = await Tournament.findById(id).populate('registeredUsers winner');
-            if (!tournament) throw new Error("Tournament not found");
-            return tournament;
-        } catch (error) {
-            throw error;
-        }
+        return await TournamentService.getTournament(id);
     }
 };
 
