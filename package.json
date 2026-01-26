@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "nodemon --watch 'src/**/*' --ext ts,graphql --exec ts-node -r tsconfig-paths/register src/app.ts",
-    "build": "tsc --project tsconfig.json && cp -r ./src/graphql/typedefs ./dist/graphql",
+    "build": "tsc --project tsconfig.json && cp -r ./src/graphql/typedefs ./dist/graphql && cp -r ./src/templates ./dist/templates",
     "start": "node dist/app.js"
   },
   "keywords": [],
