@@ -61,16 +61,30 @@ export default class GameService {
         }
     }
 
-    static async getUpcomingGames(context: any) {
+    static async getUpcomingGames(context: any, page: number = 1, limit: number = 10) {
         try {
             const user = await context.getUserLocal();
             const filter: any = { status: 'waiting' };
             if (user) {
                 filter['players.id'] = user.id;
             }
-            const games = await Game.find(filter).sort({ startDate: 1 }).lean();
+
+            const skip = (page - 1) * limit;
+            const total = await Game.countDocuments(filter);
+            const games = await Game.find(filter)
+                .sort({ startDate: 1 })
+                .skip(skip)
+                .limit(limit)
+                .lean();
+
             const formattedGames = games.map(g => this.formatGameState(g));
-            return new ClientResponse(200, true, "Games retrieved successfully", { games: formattedGames });
+            return new ClientResponse(200, true, "Games retrieved successfully", {
+                games: formattedGames,
+                total,
+                page,
+                limit,
+                pages: Math.ceil(total / limit)
+            });
         } catch (error: any) {
             return new ClientResponse(500, false, error.message);
         }

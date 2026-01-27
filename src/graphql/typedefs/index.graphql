@@ -12,6 +12,10 @@ type TournamentList {
 
 type GameList {
   games: [LudoGameState]
+  total: Int
+  page: Int
+  limit: Int
+  pages: Int
 }
 
 union ResponseData = User | LudoGameState | Tournament | TournamentList | GameList
