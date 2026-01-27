@@ -86,7 +86,7 @@ input CreateGameInput {
 
 extend type Query {
   getGame(id: ID!): Response
-  getUpcomingGames: Response!
+  getUpcomingGames(page: Int, limit: Int): Response!
   getActiveGames: Response!
 }
 
