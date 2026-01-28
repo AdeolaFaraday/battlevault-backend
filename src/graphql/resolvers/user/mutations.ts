@@ -55,6 +55,28 @@ const userMutations = {
             return new ClientResponse(401, false, error.message, null);
         }
     },
+    updateUserProfile: authenticatedRequest(
+        async (
+            _: any,
+            {
+                args,
+            }: {
+                args: {
+                    userName?: string;
+                    firstName?: string;
+                    lastName?: string;
+                    bio?: string;
+                };
+            },
+            context: any
+        ) => {
+            try {
+                return await AuthService.updateProfile(args, context);
+            } catch (err: any) {
+                return new ClientResponse(400, false, err.message, null);
+            }
+        }
+    ),
 }
 
 export default userMutations;

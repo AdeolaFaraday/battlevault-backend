@@ -10,6 +10,11 @@ const importedFunctions = directoryImport('./functions');
 
 const userSchema: Schema = new Schema(
     {
+        bio: {
+            type: String,
+            trim: true,
+            maxlength: 500,
+        },
         userName: {
             type: String,
             required: true,
@@ -68,6 +73,8 @@ const userSchema: Schema = new Schema(
         totalWins: { type: Number, default: 0 },
         totalLosses: { type: Number, default: 0 },
         experiencePoints: { type: Number, default: 0 },
+        currentStreak: { type: Number, default: 0 },
+        bestStreak: { type: Number, default: 0 },
     },
     {
         toJSON: {

@@ -89,6 +89,60 @@ export const syncGameToMongo = functions.firestore
 
             console.log(`Successfully synced game ${gameId} to MongoDB.`);
 
+            // 5. Update user stats and streaks if game finished
+            if (isGameEnd && newData.players) {
+                const userSchema = new mongoose.Schema({}, { strict: false, timestamps: true });
+                const User = mongoose.models.User || mongoose.model('User', userSchema);
+
+                const winnerId = newData.winner;
+                const playerIds = newData.players
+                    .map((p: any) => p.odooUserId)
+                    .filter((id: string) => id);
+
+                for (const odooUserId of playerIds) {
+                    try {
+                        const user = await User.findById(odooUserId);
+                        if (!user) {
+                            console.log(`User ${odooUserId} not found, skipping stats update.`);
+                            continue;
+                        }
+
+                        const isWinner = odooUserId === winnerId;
+                        const currentStreak = (user as any).currentStreak || 0;
+                        const bestStreak = (user as any).bestStreak || 0;
+
+                        if (isWinner) {
+                            // Winner: increment wins, games played, current streak, update best streak if needed
+                            const newCurrentStreak = currentStreak + 1;
+                            const newBestStreak = Math.max(bestStreak, newCurrentStreak);
+                            await User.findByIdAndUpdate(odooUserId, {
+                                $inc: {
+                                    totalGamesPlayed: 1,
+                                    totalWins: 1,
+                                },
+                                $set: {
+                                    currentStreak: newCurrentStreak,
+                                    bestStreak: newBestStreak,
+                                }
+                            });
+                            console.log(`Updated stats for winner ${odooUserId}: wins+1, gamesPlayed+1, streak=${newCurrentStreak}, best=${newBestStreak}`);
+                        } else {
+                            // Loser: increment losses, games played, reset current streak to 0
+                            await User.findByIdAndUpdate(odooUserId, {
+                                $inc: {
+                                    totalGamesPlayed: 1,
+                                    totalLosses: 1,
+                                },
+                                $set: { currentStreak: 0 }
+                            });
+                            console.log(`Updated stats for loser ${odooUserId}: losses+1, gamesPlayed+1, streak=0`);
+                        }
+                    } catch (userError) {
+                        console.error(`Error updating stats for user ${odooUserId}:`, userError);
+                    }
+                }
+            }
+
             // 4. Update Firestore to mark as synced (Optional, helps with idempotency)
             return change.after.ref.update({
                 lastSyncedToMongo: admin.firestore.FieldValue.serverTimestamp()

@@ -22,6 +22,7 @@ const loginUser = (user: any, res: any) => {
         expiresIn: jwtExp,
     });
     setCookie(authToken, user, res);
+    return authToken; // Return token for response
 };
 
 export const authenticate = (req: Request, res: Response) => {
@@ -46,8 +47,8 @@ export const authenticate = (req: Request, res: Response) => {
         else {
             try {
                 if (JSON.parse(password).isValidated) {
-                    loginUser(matchingUser, res);
-                    return matchingUser;
+                    const token = loginUser(matchingUser, res);
+                    return { user: matchingUser, token };
                 }
                 throw new Error('An error occurred during authentication');
             } catch (error) {
@@ -56,8 +57,8 @@ export const authenticate = (req: Request, res: Response) => {
                     matchingUser.password
                 );
                 if (isMatch) {
-                    loginUser(matchingUser, res);
-                    return matchingUser;
+                    const token = loginUser(matchingUser, res);
+                    return { user: matchingUser, token };
                 } else {
                     throw new Error('Invalid email and password combination!');
                 }

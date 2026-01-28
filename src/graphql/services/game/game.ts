@@ -90,6 +90,37 @@ export default class GameService {
         }
     }
 
+    static async getUserGames(context: any, page: number = 1, limit: number = 10, search?: string) {
+        try {
+            const user = await context.getUserLocal();
+            if (!user) return new ClientResponse(401, false, "Unauthorized");
+
+            const filter: any = { 'players.id': user.id };
+            if (search) {
+                filter.name = { $regex: search, $options: 'i' };
+            }
+
+            const skip = (page - 1) * limit;
+            const total = await Game.countDocuments(filter);
+            const games = await Game.find(filter)
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit)
+                .lean();
+
+            const formattedGames = games.map(g => this.formatGameState(g));
+            return new ClientResponse(200, true, "Games retrieved successfully", {
+                games: formattedGames,
+                total,
+                page,
+                limit,
+                pages: Math.ceil(total / limit)
+            });
+        } catch (error: any) {
+            return new ClientResponse(500, false, error.message);
+        }
+    }
+
     static async getActiveGames(context: any) {
         try {
             const user = await context.getUserLocal();

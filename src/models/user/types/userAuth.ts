@@ -7,6 +7,7 @@ export interface CreateUserInputs {
   lastName: string;
   email: string;
   password?: string;
+  bio?: string;
   avatar?: string;
   totalGamesPlayed?: number;
   emailVerifiedAt?: Date;

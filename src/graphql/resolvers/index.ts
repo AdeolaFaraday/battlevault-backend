@@ -11,8 +11,11 @@ const resolvers = {
     Upload: GraphQLUpload,
     ResponseData: {
         __resolveType(obj: any, _: any, __: any) {
+            if (obj.user && obj.token) return 'AuthPayload';
+            if (obj.totalGamesPlayed !== undefined && obj.totalWins !== undefined) return 'UserStats';
             if (obj.tournaments) return 'TournamentList';
             if (obj.games) return 'GameList';
+            if (obj.players !== undefined) return 'LeaderboardResult';
             if (obj.email) return 'User';
             if (obj.currentTurn || obj.tokens) return 'LudoGameState';
             if (obj.title) return 'Tournament';
