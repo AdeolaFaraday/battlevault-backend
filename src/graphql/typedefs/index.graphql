@@ -18,7 +18,21 @@ type GameList {
   pages: Int
 }
 
-union ResponseData = User | LudoGameState | Tournament | TournamentList | GameList
+type AuthPayload {
+  user: User
+  token: String
+}
+
+type UserStats {
+  totalGamesPlayed: Int
+  totalWins: Int
+  totalLosses: Int
+  winPercentage: Float
+  currentStreak: Int
+  bestStreak: Int
+}
+
+union ResponseData = User | LudoGameState | Tournament | TournamentList | GameList | LeaderboardResult | UserStats | AuthPayload
 
 type Response {
   statusCode: Int!

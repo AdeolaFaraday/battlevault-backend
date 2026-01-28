@@ -51,6 +51,7 @@ const connectDB = async () => {
     await mongoose_1.default.connect(MONGO_URI);
     isConnected = true;
 };
+console.log('MONGO_URI', MONGO_URI);
 exports.syncGameToMongo = functions.firestore
     .document('games/{gameId}')
     .onUpdate(async (change, context) => {

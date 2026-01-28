@@ -20,7 +20,31 @@ type User {
   firstName: String
   lastName: String
   email: String
+  bio: String
   country: Country
+}
+
+type LeaderboardPlayer {
+  _id: ID!
+  userName: String
+  firstName: String
+  lastName: String
+  avatar: String
+  totalGamesPlayed: Int
+  totalWins: Int
+  totalLosses: Int
+  currentStreak: Int
+  bestStreak: Int
+  winPercentage: Float
+}
+
+type LeaderboardResult {
+  players: [LeaderboardPlayer]
+  total: Int
+  page: Int
+  limit: Int
+  totalPages: Int
+  hasMore: Boolean
 }
 
 input UserInput {
@@ -34,9 +58,19 @@ input UserInput {
   country: CountryInput
 }
 
+input UpdateUserProfileInput {
+  userName: String
+  firstName: String
+  lastName: String
+  bio: String
+}
+
 type Query {
   # User
   getUser: Response
+  getUserStats: Response
+  getUserGames(limit: Int, page: Int, search: String): Response
+  getLeaderboard(limit: Int, page: Int, search: String): Response
 }
 
 type Mutation {
@@ -49,4 +83,7 @@ type Mutation {
   logout: Response
   verifyEmail(token: String!): Response
   socialAuth(token: String!): Response
+  updateUserProfile(
+    args: UpdateUserProfileInput
+  ): Response
 }

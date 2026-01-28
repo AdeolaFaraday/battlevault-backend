@@ -10,6 +10,7 @@ export interface IUser {
     firstName: string;
     lastName: string;
     email: string;
+    bio?: string;
     password: string;
     emailVerifiedAt?: Date;
     emailVerificationToken?: string;
@@ -19,6 +20,8 @@ export interface IUser {
     totalWins?: number;
     totalLosses?: number;
     experiencePoints?: number;
+    currentStreak?: number;
+    bestStreak?: number;
     country?: ICountry;
 }
 
