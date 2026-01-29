@@ -86,7 +86,7 @@ export default class AuthService {
         });
         return new ClientResponse(200, true, 'Login successful', { user: result.user, token: result.token });
       } else {
-        const userData = generateSignUpUserData(socialAuthData);
+        const userData = await generateSignUpUserData(socialAuthData);
         const newUser = await User.createUser(userData as CreateUserInputs);
         if (!newUser) {
           return new ClientResponse(500, false, 'Failed to create user', null);
