@@ -87,7 +87,7 @@ export const syncGameToMongo = functions.firestore
                 { upsert: true, new: true }
             );
 
-            console.log(`Successfully synced game ${gameId} to MongoDB.`);
+            console.log(`Successfully synced game ${gameId} to MongoDB.`, { gameId, newData: newData?.players, isGameStart, isGameEnd });
 
             // 5. Update user stats and streaks if game finished
             if (isGameEnd && newData.players) {
@@ -96,10 +96,10 @@ export const syncGameToMongo = functions.firestore
 
                 const winnerId = newData.winner;
                 const playerIds = newData.players
-                    .map((p: any) => p.odooUserId)
-                    .filter((id: string) => id);
+                    .map((p: any) => p.id)
 
                 for (const odooUserId of playerIds) {
+                    console.log(`Processing user ${odooUserId} for game ${gameId}`);
                     try {
                         const user = await User.findById(odooUserId);
                         if (!user) {

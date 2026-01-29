@@ -51,7 +51,6 @@ const connectDB = async () => {
     await mongoose_1.default.connect(MONGO_URI);
     isConnected = true;
 };
-console.log('MONGO_URI', MONGO_URI);
 exports.syncGameToMongo = functions.firestore
     .document('games/{gameId}')
     .onUpdate(async (change, context) => {
@@ -83,7 +82,55 @@ exports.syncGameToMongo = functions.firestore
         const gameSchema = new mongoose_1.default.Schema({}, { strict: false, timestamps: true });
         const Game = mongoose_1.default.models.Game || mongoose_1.default.model('Game', gameSchema);
         await Game.findByIdAndUpdate(gameId, { $set: mappedData }, { upsert: true, new: true });
-        console.log(`Successfully synced game ${gameId} to MongoDB.`);
+        console.log(`Successfully synced game ${gameId} to MongoDB.`, { gameId, newData: newData?.players, isGameStart, isGameEnd });
+        if (isGameEnd && newData.players) {
+            const userSchema = new mongoose_1.default.Schema({}, { strict: false, timestamps: true });
+            const User = mongoose_1.default.models.User || mongoose_1.default.model('User', userSchema);
+            const winnerId = newData.winner;
+            const playerIds = newData.players
+                .map((p) => p.id);
+            for (const odooUserId of playerIds) {
+                console.log(`Processing user ${odooUserId} for game ${gameId}`);
+                try {
+                    const user = await User.findById(odooUserId);
+                    if (!user) {
+                        console.log(`User ${odooUserId} not found, skipping stats update.`);
+                        continue;
+                    }
+                    const isWinner = odooUserId === winnerId;
+                    const currentStreak = user.currentStreak || 0;
+                    const bestStreak = user.bestStreak || 0;
+                    if (isWinner) {
+                        const newCurrentStreak = currentStreak + 1;
+                        const newBestStreak = Math.max(bestStreak, newCurrentStreak);
+                        await User.findByIdAndUpdate(odooUserId, {
+                            $inc: {
+                                totalGamesPlayed: 1,
+                                totalWins: 1,
+                            },
+                            $set: {
+                                currentStreak: newCurrentStreak,
+                                bestStreak: newBestStreak,
+                            }
+                        });
+                        console.log(`Updated stats for winner ${odooUserId}: wins+1, gamesPlayed+1, streak=${newCurrentStreak}, best=${newBestStreak}`);
+                    }
+                    else {
+                        await User.findByIdAndUpdate(odooUserId, {
+                            $inc: {
+                                totalGamesPlayed: 1,
+                                totalLosses: 1,
+                            },
+                            $set: { currentStreak: 0 }
+                        });
+                        console.log(`Updated stats for loser ${odooUserId}: losses+1, gamesPlayed+1, streak=0`);
+                    }
+                }
+                catch (userError) {
+                    console.error(`Error updating stats for user ${odooUserId}:`, userError);
+                }
+            }
+        }
         return change.after.ref.update({
             lastSyncedToMongo: admin.firestore.FieldValue.serverTimestamp()
         });
