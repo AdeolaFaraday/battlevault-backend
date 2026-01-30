@@ -9,6 +9,9 @@ const tournamentQueries = {
     },
     getTournamentBracket: async (_: any, { tournamentId }: { tournamentId: string }) => {
         return await TournamentService.getTournamentBracket(tournamentId);
+    },
+    isUserRegistered: async (_: any, { tournamentId }: { tournamentId: string }, context: any) => {
+        return await TournamentService.isUserRegistered(tournamentId, context);
     }
 };
 

@@ -19,6 +19,8 @@ const resolvers = {
             if (obj.players !== undefined) return 'LeaderboardResult';
             if (obj.email) return 'User';
             if (obj.title) return 'Tournament';
+            if (obj.stages) return 'TournamentBracket';
+            if (obj.isRegistered !== undefined) return 'TournamentRegistration';
 
             console.error('[GraphQL Union Resolver] Failed to resolve type for keys:', Object.keys(obj));
             return null;

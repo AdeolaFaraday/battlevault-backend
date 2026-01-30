@@ -69,6 +69,7 @@ export default class TournamentService {
                         name: `${stageName} - Match ${i + 1}`,
                         type: 'TOURNAMENT',
                         status: 'waiting',
+                        matchStage: stageName,
                         // Initial status 'waiting'. Logic will set active ones to 'playingDice'/'playingToken' via separate process or here.
                         // For now, let's keep them 'waiting' unless it's round 0 and ready.
                         tournamentId: tournament._id,
@@ -109,10 +110,6 @@ export default class TournamentService {
             const firstRoundGames = bracket[0];
             const LudoColor = { RED: 'red', GREEN: 'green', BLUE: 'blue', YELLOW: 'yellow' }; // Basic definition
 
-            // Assuming 2 players per game for Ludo tournament knockout
-            // Color assignment: Player 1 = Red, Player 2 = Green (Standard 1v1 Ludo config often used)
-            const P1_COLOR = LudoColor.RED;
-            const P2_COLOR = LudoColor.GREEN;
             // Tokens need to be initialized if the game is active immediately, 
             // but the GameService usually handles token initialization on create. 
             // We manually set basic structure here.
@@ -238,6 +235,21 @@ export default class TournamentService {
                 tournament,
                 stages: bracketData
             });
+        } catch (error: any) {
+            return new ClientResponse(500, false, error.message);
+        }
+    }
+
+    static async isUserRegistered(tournamentId: string, context: any) {
+        try {
+            const user = await context.getUserLocal();
+            if (!user) return new ClientResponse(401, false, "Unauthorized");
+
+            const tournament = await Tournament.findById(tournamentId);
+            if (!tournament) return new ClientResponse(404, false, "Tournament not found");
+
+            const isRegistered = tournament.registeredUsers.some(id => id.toString() === user.id);
+            return new ClientResponse(200, true, "Registration status retrieved", { isRegistered });
         } catch (error: any) {
             return new ClientResponse(500, false, error.message);
         }
