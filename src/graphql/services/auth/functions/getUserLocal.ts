@@ -20,9 +20,9 @@ export const getUserLocal = (req: any, res: any) => {
         try {
             console.log({ gotIntoTryBlock: true });
             const decoded: any = verify(token, jwt.jwtSecret as string);
-            console.log({ decoded });
+            // console.log({ decoded });
             const user = await User.findById(decoded.id);
-            console.log({ user });
+            // console.log({ user });
             if (!user) {
                 return null;
             }

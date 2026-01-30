@@ -33,6 +33,15 @@ type Tournament {
   updatedAt: String
 }
 
+type TournamentBracket {
+  tournament: Tournament
+  stages: [TournamentStage]
+}
+
+type TournamentRegistration {
+  isRegistered: Boolean!
+}
+
 input CreateTournamentInput {
   title: String!
   description: String
@@ -63,6 +72,7 @@ extend type Query {
   getTournaments: Response
   getTournament(id: ID!): Response
   getTournamentBracket(tournamentId: ID!): Response
+  isUserRegistered(tournamentId: ID!): Response
 }
 
 extend type Mutation {
