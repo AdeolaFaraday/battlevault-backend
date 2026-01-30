@@ -11,6 +11,7 @@ export interface LudoPlayer {
     name: string;
     color: string;
     tokens: string[];
+    slot: number | string;
 }
 
 export interface LudoGameState {
@@ -27,6 +28,9 @@ interface GameDoc extends Document, LudoGameState {
     type: GameType;
     tournamentId?: string;
     matchStage?: string;
+    stageId?: string;
+    nextGameId?: string;
+    nextGameSlot?: number | string;
     startDate?: Date;
     createdAt: Date;
     updatedAt: Date;

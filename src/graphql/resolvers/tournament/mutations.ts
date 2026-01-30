@@ -6,6 +6,9 @@ const tournamentMutations = {
     },
     registerForTournament: async (_: any, { tournamentId, password }: { tournamentId: string, password?: string }, context: any) => {
         return await TournamentService.registerForTournament(tournamentId, password, context);
+    },
+    startTournament: async (_: any, { tournamentId }: { tournamentId: string }) => {
+        return await TournamentService.startTournament(tournamentId);
     }
 };
 

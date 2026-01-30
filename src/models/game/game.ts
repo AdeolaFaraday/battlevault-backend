@@ -27,6 +27,19 @@ const gameSchema: Schema = new Schema(
                 return this.type === GameType.TOURNAMENT;
             }
         },
+        stageId: {
+            type: Schema.Types.ObjectId,
+            ref: 'TournamentStage',
+            required: function (this: GameDoc) {
+                return this.type === GameType.TOURNAMENT;
+            }
+        },
+        nextGameId: {
+            type: String, // Storing as String to match _id usage, can also be Schema.Types.ObjectId
+        },
+        nextGameSlot: {
+            type: Schema.Types.Mixed, // Can be number or string
+        },
         startDate: { type: Date, required: false },
         players: [
             {
@@ -34,13 +47,14 @@ const gameSchema: Schema = new Schema(
                     type: String,
                     default: () => new Types.ObjectId().toString()
                 },
-                name: { type: String, required: true },
+                name: { type: String, required: false }, // Not required initially for placeholders
                 color: {
                     type: String,
-                    required: true,
-                    lowercase: true // Enforce colors to be lowercase
+                    required: false, // Not required initially
+                    lowercase: true
                 },
-                tokens: [{ type: String }]
+                tokens: [{ type: String }],
+                slot: { type: Schema.Types.Mixed, required: true } // Added slot identifiers
             }
         ],
         currentTurn: { type: String, required: false },

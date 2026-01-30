@@ -19,6 +19,7 @@ const tournamentSchema = new Schema(
             enum: ['UPCOMING', 'ONGOING', 'COMPLETED', 'CANCELLED'],
             default: 'UPCOMING',
         },
+        currentStage: { type: Schema.Types.ObjectId, ref: 'TournamentStage' },
         frequency: {
             type: String,
             enum: ['DAILY', 'WEEKLY', 'MONTHLY', 'ONE_TIME'],

@@ -21,6 +21,7 @@ export default interface TournamentDoc extends Document {
     winner?: Types.ObjectId | null;
     startDate: Date;
     endDate?: Date;
+    currentStage?: Types.ObjectId;
 }
 
 export interface CrateTournamentInput {
