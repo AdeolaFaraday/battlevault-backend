@@ -21,6 +21,8 @@ export interface LudoGameState {
     isRolling: boolean;
     status: string;
     tokens?: any; // Add tokens field
+    usedDiceValues: number[];
+    activeDiceConfig: number[];
 }
 
 interface GameDoc extends Document, LudoGameState {
