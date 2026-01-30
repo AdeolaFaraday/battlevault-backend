@@ -208,11 +208,42 @@ export default class GameService {
         const gameRef = db.collection('games').doc(gameId);
 
         try {
-            const result = await db.runTransaction(async (transaction) => {
-                const doc = await transaction.get(gameRef);
-                if (!doc.exists) throw new Error("Game not found");
+            // Check if game exists in Firestore
+            let doc = await gameRef.get();
 
-                const gameState = doc.data() as LudoGameState;
+            if (!doc.exists) {
+                // Check MongoDB if it's a tournament game
+                const mongoGame = await Game.findById(gameId).lean();
+                if (!mongoGame || mongoGame.type !== 'TOURNAMENT') {
+                    return new ClientResponse(404, false, "Game not found");
+                }
+
+                // Initialize in Firestore
+                const initialData = {
+                    id: gameId,
+                    name: mongoGame.name,
+                    type: mongoGame.type,
+                    status: LudoStatus.WAITING,
+                    tokens: INITIAL_TOKENS,
+                    diceValue: [],
+                    usedDiceValues: [],
+                    activeDiceConfig: [],
+                    players: [],
+                    currentTurn: "",
+                    isRolling: false,
+                    startDate: new Date(),
+                    updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                };
+
+                await gameRef.set(initialData);
+                doc = await gameRef.get();
+            }
+
+            const result = await db.runTransaction(async (transaction) => {
+                const docInTransaction = await transaction.get(gameRef);
+                if (!docInTransaction.exists) throw new Error("Game not found even after initialization");
+
+                const gameState = docInTransaction.data() as LudoGameState;
                 if (gameState.players.length >= 2) throw new Error("Game is full (2 player mode)");
                 if (gameState.players.find(p => p.id === finalUserId)) throw new Error("User already in game");
 
