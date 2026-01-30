@@ -87,6 +87,54 @@ exports.syncGameToMongo = functions.firestore
             const userSchema = new mongoose_1.default.Schema({}, { strict: false, timestamps: true });
             const User = mongoose_1.default.models.User || mongoose_1.default.model('User', userSchema);
             const winnerId = newData.winner;
+            if (newData.type === 'TOURNAMENT' && newData.nextGameId && newData.nextGameSlot !== undefined) {
+                try {
+                    console.log(`Processing Tournament Progression for Game ${gameId} -> Next Game ${newData.nextGameId}`);
+                    const db = admin.firestore();
+                    const nextGameRef = db.collection('games').doc(newData.nextGameId);
+                    await db.runTransaction(async (t) => {
+                        const nextGameDoc = await t.get(nextGameRef);
+                        if (!nextGameDoc.exists) {
+                            throw new Error("Next game not found");
+                        }
+                        const nextGameData = nextGameDoc.data() || {};
+                        const players = nextGameData.players || [];
+                        const slot = Number(newData.nextGameSlot);
+                        const winnerPlayer = newData.players.find((p) => p.id === winnerId);
+                        if (winnerPlayer) {
+                            while (players.length <= slot) {
+                                players.push({ slot: players.length });
+                            }
+                            const colorPairs = [
+                                { color: 'red', tokens: ['red', 'green'] },
+                                { color: 'blue', tokens: ['blue', 'yellow'] }
+                            ];
+                            const assignedPair = colorPairs[slot] || colorPairs[0];
+                            players[slot] = {
+                                id: winnerId,
+                                name: winnerPlayer.name,
+                                color: assignedPair.color,
+                                tokens: assignedPair.tokens,
+                                slot: slot
+                            };
+                            const updates = {
+                                players: players,
+                                updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                            };
+                            const activePlayers = players.filter((p) => p.id);
+                            if (activePlayers.length === 2 && nextGameData.status === 'waiting') {
+                                updates.status = 'playingDice';
+                                updates.currentTurn = activePlayers[0].id;
+                            }
+                            t.update(nextGameRef, updates);
+                        }
+                    });
+                    console.log(`Successfully advanced winner ${winnerId} to next game ${newData.nextGameId} slot ${newData.nextGameSlot}`);
+                }
+                catch (progressionError) {
+                    console.error(`Error processing tournament progression for game ${gameId}:`, progressionError);
+                }
+            }
             const playerIds = newData.players
                 .map((p) => p.id);
             for (const odooUserId of playerIds) {

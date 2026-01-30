@@ -28,7 +28,12 @@ const tournamentSchema = new Schema(
         isPrivate: { type: Boolean, default: false },
         password: { type: String },
         minRating: { type: Number, default: 0 },
-        registeredUsers: [{ type: Types.ObjectId, ref: 'User' }],
+        registeredUsers: [
+            {
+                userId: { type: Types.ObjectId, ref: 'User' },
+                name: { type: String, required: true },
+            },
+        ],
         maxUsers: { type: Number, required: true, min: 2 },
         winner: { type: Types.ObjectId, ref: 'User', default: null },
         startDate: { type: Date, required: true },

@@ -72,7 +72,7 @@ export default class GameService {
             const skip = (page - 1) * limit;
             const total = await Game.countDocuments(filter);
             const games = await Game.find(filter)
-                .sort({ startDate: 1 })
+                .sort({ createdAt: -1 })
                 .skip(skip)
                 .limit(limit)
                 .lean();
