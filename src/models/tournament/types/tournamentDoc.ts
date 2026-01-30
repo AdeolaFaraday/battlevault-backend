@@ -16,7 +16,10 @@ export default interface TournamentDoc extends Document {
     isPrivate: boolean;
     password?: string;
     minRating?: number;
-    registeredUsers: Types.ObjectId[];
+    registeredUsers: {
+        userId: Types.ObjectId;
+        name: string;
+    }[];
     maxUsers: number;
     winner?: Types.ObjectId | null;
     startDate: Date;
