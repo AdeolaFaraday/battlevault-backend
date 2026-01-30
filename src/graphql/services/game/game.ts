@@ -219,19 +219,28 @@ export default class GameService {
                 }
 
                 // Initialize in Firestore
-                // Sanitize mongoGame to plain JS object to avoid Firestore serialization errors with ObjectIds
-                const sanitizedMongo = JSON.parse(JSON.stringify(mongoGame));
-                const { _id, __v, ...mongoData } = sanitizedMongo;
-
+                // Manually set required fields to avoid serialization issues and ID conflicts
                 const initialData = {
-                    ...mongoData,
                     id: gameId,
+                    name: mongoGame.name,
+                    type: mongoGame.type,
+                    tournamentId: mongoGame.tournamentId?.toString(),
+                    nextGameId: mongoGame.nextGameId,
+                    nextGameSlot: mongoGame.nextGameSlot,
+                    stageId: mongoGame.stageId?.toString(),
+                    matchStage: mongoGame.matchStage,
                     status: LudoStatus.WAITING,
                     tokens: INITIAL_TOKENS,
                     diceValue: [],
                     usedDiceValues: [],
                     activeDiceConfig: [],
-                    players: mongoData.players || [],
+                    players: (mongoGame.players || []).map((p: any) => ({
+                        id: p.id || p._id?.toString(),
+                        name: p.name,
+                        color: p.color,
+                        tokens: p.tokens,
+                        slot: p.slot
+                    })),
                     currentTurn: "",
                     isRolling: false,
                     startDate: new Date(),
