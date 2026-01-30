@@ -1,3 +1,5 @@
+import User from "../models/user/user";
+
 export function importFunctionsAndAppendToSchema(
   functionImport: any,
   mongoSchema: any
@@ -17,10 +19,46 @@ export function importFunctionsAndAppendToSchema(
   return filteredKeys;
 }
 
-export const generateSignUpUserData = (data: any) => {
-  const [firstName, lastName] = data?.name?.split(" ")
+/**
+ * Generates a random alphanumeric string
+ */
+const generateRandomString = (length: number): string => {
+  const characters = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += characters.charAt(Math.floor(Math.random() * characters.length));
+  }
+  return result;
+};
+
+/**
+ * Generates a unique username with the brand name "battlevault"
+ * Checks the database to ensure the username doesn't already exist
+ */
+const generateUniqueUserName = async (): Promise<string> => {
+  const BRAND_NAME = 'battlevault';
+  const MAX_ATTEMPTS = 10;
+
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+    const randomSuffix = generateRandomString(6);
+    const userName = `${BRAND_NAME}_${randomSuffix}`;
+
+    const existingUser = await User.findOne({ userName });
+    if (!existingUser) {
+      return userName;
+    }
+  }
+
+  // Fallback: use timestamp for guaranteed uniqueness
+  return `${BRAND_NAME}_${Date.now()}`;
+};
+
+export const generateSignUpUserData = async (data: any) => {
+  const [firstName, lastName] = data?.name?.split(" ") || ['', ''];
+  const userName = await generateUniqueUserName();
+
   return {
-    userName: data?.email,
+    userName,
     firstName,
     lastName,
     avatar: data?.picture,
@@ -30,5 +68,5 @@ export const generateSignUpUserData = (data: any) => {
       countryName: 'Nigeria',
       countryCode: 'NG',
     },
-  }
+  };
 }

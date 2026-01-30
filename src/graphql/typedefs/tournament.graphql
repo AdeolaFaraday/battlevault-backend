@@ -49,12 +49,24 @@ input CreateTournamentInput {
   endDate: String
 }
 
+type TournamentStage {
+  _id: ID!
+  tournamentId: ID!
+  name: String!
+  index: Int!
+  gameIds: [String]
+  status: String!
+  games: [Game] # Use [Game] or [JSON] if Game type is not fully exposed here. Usually Game is in game.graphql.
+}
+
 extend type Query {
   getTournaments: Response
   getTournament(id: ID!): Response
+  getTournamentBracket(tournamentId: ID!): Response
 }
 
 extend type Mutation {
   createTournament(input: CreateTournamentInput!): Response
   registerForTournament(tournamentId: ID!, password: String): Response
+  startTournament(tournamentId: ID!): Response
 }
