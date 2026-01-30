@@ -15,12 +15,13 @@ export interface LudoPlayer {
 }
 
 export interface LudoGameState {
+    type?: string;
     players: LudoPlayer[];
     currentTurn: string;
     diceValue: number[];
     isRolling: boolean;
     status: string;
-    tokens?: any; // Add tokens field
+    tokens?: any;
     usedDiceValues: number[];
     activeDiceConfig: number[];
 }

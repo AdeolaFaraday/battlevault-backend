@@ -100,59 +100,81 @@ export const syncGameToMongo = functions.firestore
                 if (newData.type === 'TOURNAMENT' && newData.nextGameId && newData.nextGameSlot !== undefined) {
                     try {
                         console.log(`Processing Tournament Progression for Game ${gameId} -> Next Game ${newData.nextGameId}`);
+
+                        // Fetch winner details
+                        const winnerPlayer = newData.players.find((p: any) => p.id === winnerId);
+                        if (!winnerPlayer) {
+                            throw new Error(`Winner player ${winnerId} not found in game ${gameId}`);
+                        }
+
+                        const slot = Number(newData.nextGameSlot);
+                        const colorPairs = [
+                            { color: 'red', tokens: ['red', 'green'] },
+                            { color: 'blue', tokens: ['blue', 'yellow'] }
+                        ];
+                        const assignedPair = colorPairs[slot] || colorPairs[0];
+
+                        const winnerData = {
+                            id: winnerId,
+                            name: winnerPlayer.name,
+                            color: assignedPair.color,
+                            tokens: assignedPair.tokens,
+                            slot: slot
+                        };
+
+                        // 1. Update MongoDB for Next Game
+                        const nextMongoGame = await Game.findById(newData.nextGameId);
+                        if (nextMongoGame) {
+                            const players = (nextMongoGame as any).players || [];
+                            while (players.length <= slot) {
+                                players.push({ slot: players.length });
+                            }
+                            players[slot] = winnerData;
+
+                            const mongoUpdates: any = { players };
+                            const activePlayers = players.filter((p: any) => p.id);
+                            if (activePlayers.length === 2 && (nextMongoGame as any).status === 'waiting') {
+                                mongoUpdates.status = 'playingDice';
+                                mongoUpdates.currentTurn = activePlayers[0].id;
+                            }
+
+                            await Game.findByIdAndUpdate(newData.nextGameId, { $set: mongoUpdates });
+                            console.log(`Updated MongoDB for next game ${newData.nextGameId}`);
+                        } else {
+                            console.warn(`Next game ${newData.nextGameId} not found in MongoDB for progression.`);
+                        }
+
+                        // 2. Update Firestore for Next Game (if exists)
                         const db = admin.firestore();
                         const nextGameRef = db.collection('games').doc(newData.nextGameId);
 
                         await db.runTransaction(async (t) => {
                             const nextGameDoc = await t.get(nextGameRef);
                             if (!nextGameDoc.exists) {
-                                throw new Error("Next game not found");
+                                console.log(`Next game ${newData.nextGameId} not in Firestore yet. Skipping Firestore update.`);
+                                return;
                             }
 
                             const nextGameData = nextGameDoc.data() || {};
                             const players = nextGameData.players || [];
-                            const slot = Number(newData.nextGameSlot);
 
-                            // Construct Winner Player Object
-                            // We need to fetch the winner's details from the current game's players list
-                            const winnerPlayer = newData.players.find((p: any) => p.id === winnerId);
-
-                            if (winnerPlayer) {
-                                // Assign to the correct slot
-                                // If players array is small, we need to fill it 
-                                while (players.length <= slot) {
-                                    players.push({ slot: players.length }); // Placeholder
-                                }
-
-                                const colorPairs = [
-                                    { color: 'red', tokens: ['red', 'green'] },
-                                    { color: 'blue', tokens: ['blue', 'yellow'] }
-                                ];
-
-                                const assignedPair = colorPairs[slot] || colorPairs[0];
-
-                                players[slot] = {
-                                    id: winnerId,
-                                    name: winnerPlayer.name,
-                                    color: assignedPair.color,
-                                    tokens: assignedPair.tokens,
-                                    slot: slot
-                                };
-
-                                const updates: any = {
-                                    players: players,
-                                    updatedAt: admin.firestore.FieldValue.serverTimestamp()
-                                };
-
-                                // Check if game is now full to start it
-                                const activePlayers = players.filter((p: any) => p.id);
-                                if (activePlayers.length === 2 && nextGameData.status === 'waiting') {
-                                    updates.status = 'playingDice';
-                                    updates.currentTurn = activePlayers[0].id;
-                                }
-
-                                t.update(nextGameRef, updates);
+                            while (players.length <= slot) {
+                                players.push({ slot: players.length });
                             }
+                            players[slot] = winnerData;
+
+                            const updates: any = {
+                                players: players,
+                                updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                            };
+
+                            const activePlayers = players.filter((p: any) => p.id);
+                            if (activePlayers.length === 2 && nextGameData.status === 'waiting') {
+                                updates.status = 'playingDice';
+                                updates.currentTurn = activePlayers[0].id;
+                            }
+
+                            t.update(nextGameRef, updates);
                         });
                         console.log(`Successfully advanced winner ${winnerId} to next game ${newData.nextGameId} slot ${newData.nextGameSlot}`);
                     } catch (progressionError) {
