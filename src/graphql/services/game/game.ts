@@ -219,16 +219,16 @@ export default class GameService {
                 }
 
                 // Initialize in Firestore
+                const { _id, __v, ...mongoData } = mongoGame as any;
                 const initialData = {
+                    ...mongoData,
                     id: gameId,
-                    name: mongoGame.name,
-                    type: mongoGame.type,
                     status: LudoStatus.WAITING,
                     tokens: INITIAL_TOKENS,
                     diceValue: [],
                     usedDiceValues: [],
                     activeDiceConfig: [],
-                    players: [],
+                    players: mongoGame.players || [],
                     currentTurn: "",
                     isRolling: false,
                     startDate: new Date(),
@@ -244,32 +244,97 @@ export default class GameService {
                 if (!docInTransaction.exists) throw new Error("Game not found even after initialization");
 
                 const gameState = docInTransaction.data() as LudoGameState;
-                if (gameState.players.length >= 2) throw new Error("Game is full (2 player mode)");
-                if (gameState.players.find(p => p.id === finalUserId)) throw new Error("User already in game");
 
-                const isFirstPlayer = gameState.players.length === 0;
-                const assignedColors = isFirstPlayer
-                    ? [LudoColor.RED, LudoColor.GREEN]
-                    : [LudoColor.BLUE, LudoColor.YELLOW];
+                // If user is already in game, just return success (idempotent)
+                const existingPlayer = gameState.players.find(p => p.id === finalUserId);
+                if (existingPlayer) {
+                    const { id: _, ...stateData } = gameState as any;
+                    return { ...stateData, _id: gameId };
+                }
 
-                const newPlayer = {
-                    id: finalUserId,
-                    name,
-                    color: assignedColors[0],
-                    tokens: assignedColors,
-                    capturedCount: 0,
-                    finishedCount: 0
-                };
+                if (gameState.players.filter(p => !!p.id).length >= 2) throw new Error("Game is full");
 
-                const updatedPlayers = [...gameState.players, newPlayer];
+                let updatedPlayers = [...gameState.players];
+                let newPlayer: any;
+
+                if (gameState.type === 'TOURNAMENT') {
+                    // Try to find the slot from the player's previous game win
+                    const previousGame = await Game.findOne({
+                        winner: finalUserId,
+                        nextGameId: gameId,
+                        status: 'finished'
+                    }).lean();
+
+                    let slotToFill: number;
+
+                    if (previousGame && previousGame.nextGameSlot !== undefined) {
+                        slotToFill = Number(previousGame.nextGameSlot);
+                    } else {
+                        // Fallback: Find an empty slot or next available
+                        const placeholderIndex = updatedPlayers.findIndex(p => !p.id);
+                        if (placeholderIndex !== -1) {
+                            slotToFill = placeholderIndex;
+                        } else if (updatedPlayers.length < 2) {
+                            slotToFill = updatedPlayers.length;
+                        } else {
+                            throw new Error("No available slots in this tournament game");
+                        }
+                    }
+
+                    const colorPairs = [
+                        { color: LudoColor.RED, tokens: [LudoColor.RED, LudoColor.GREEN] },
+                        { color: LudoColor.BLUE, tokens: [LudoColor.BLUE, LudoColor.YELLOW] }
+                    ];
+                    const assignedPair = colorPairs[slotToFill] || colorPairs[0];
+
+                    newPlayer = {
+                        id: finalUserId,
+                        name,
+                        color: assignedPair.color,
+                        tokens: assignedPair.tokens,
+                        capturedCount: 0,
+                        finishedCount: 0,
+                        slot: slotToFill
+                    };
+
+                    // Ensure array is large enough for the slot
+                    while (updatedPlayers.length <= slotToFill) {
+                        updatedPlayers.push({ slot: updatedPlayers.length } as any);
+                    }
+
+                    // Collision Protection: check if slot is already occupied by someone else
+                    const existingOccupant = updatedPlayers[slotToFill];
+                    if (existingOccupant && existingOccupant.id && existingOccupant.id !== finalUserId) {
+                        throw new Error(`Slot ${slotToFill} is already occupied by another player`);
+                    }
+
+                    updatedPlayers[slotToFill] = newPlayer;
+                } else {
+                    const isFirstPlayer = gameState.players.length === 0;
+                    const assignedColors = isFirstPlayer
+                        ? [LudoColor.RED, LudoColor.GREEN]
+                        : [LudoColor.BLUE, LudoColor.YELLOW];
+
+                    newPlayer = {
+                        id: finalUserId,
+                        name,
+                        color: assignedColors[0],
+                        tokens: assignedColors,
+                        capturedCount: 0,
+                        finishedCount: 0
+                    };
+                    updatedPlayers.push(newPlayer);
+                }
+
                 const updates: any = {
                     players: updatedPlayers,
                     updatedAt: admin.firestore.FieldValue.serverTimestamp()
                 };
 
-                if (updatedPlayers.length === 2 && gameState.status === LudoStatus.WAITING) {
+                const activePlayers = updatedPlayers.filter(p => !!p.id);
+                if (activePlayers.length === 2 && gameState.status === LudoStatus.WAITING) {
                     updates.status = LudoStatus.PLAYING_DICE;
-                    updates.currentTurn = updatedPlayers[0].id;
+                    updates.currentTurn = activePlayers[0].id || "";
                 }
 
                 transaction.update(gameRef, updates);

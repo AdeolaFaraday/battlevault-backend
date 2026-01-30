@@ -22,13 +22,14 @@ export interface Token {
 }
 
 export interface LudoPlayer {
-    id: string;
+    id?: string;
     name: string;
     avatarUrl?: string;
     color: string;
     tokens: string[];
-    capturedCount: number;
-    finishedCount: number;
+    capturedCount?: number;
+    finishedCount?: number;
+    slot?: number | string;
 }
 
 export interface TokenMap {
@@ -37,6 +38,7 @@ export interface TokenMap {
 
 export interface LudoGameState {
     id: string;
+    type?: string;
     players: LudoPlayer[];
     currentTurn: string;
     diceValue: number[];
@@ -47,7 +49,7 @@ export interface LudoGameState {
     usedDiceValues: number[];
     activeDiceConfig: number[] | null;
     lastMoverId?: string;
-    startDate?: string;
+    startDate?: any;
 }
 
 export const HOME_POSITIONS: { [key: string]: number } = {
@@ -68,7 +70,7 @@ export const getNextPlayerId = (players: LudoPlayer[], currentTurnId: string) =>
     const currentIndex = players.findIndex((p) => p.id === currentTurnId);
     if (currentIndex === -1) return currentTurnId;
     const nextIndex = (currentIndex + 1) % players.length;
-    return players[nextIndex].id;
+    return players[nextIndex].id || "";
 };
 
 export const getProjectedPosition = (token: Token, moveAmount: number) => {
