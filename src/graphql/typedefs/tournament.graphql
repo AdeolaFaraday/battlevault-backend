@@ -56,7 +56,7 @@ type TournamentStage {
   index: Int!
   gameIds: [String]
   status: String!
-  games: [Game] # Use [Game] or [JSON] if Game type is not fully exposed here. Usually Game is in game.graphql.
+  games: [LudoGameState] # Use [Game] or [JSON] if Game type is not fully exposed here. Usually Game is in game.graphql.
 }
 
 extend type Query {
