@@ -11,9 +11,14 @@ const tournamentSchema = new Schema(
         title: { type: String, required: true, trim: true },
         description: { type: String, trim: true },
         gameType: { type: String, enum: ['LUDO', 'CHESS'], required: true },
-        entryFee: { type: Number, default: 0, min: 0 },
-        entryFeeCurrency: { type: String, default: 'USDT' },
-        prize: { type: String, required: true },
+        entryFee: {
+            amount: { type: Number, default: 0, min: 0 },
+            currency: { type: String, default: 'NGN' }
+        },
+        prize: {
+            amount: { type: Number, required: true },
+            currency: { type: String, default: 'NGN' }
+        },
         status: {
             type: String,
             enum: ['UPCOMING', 'ONGOING', 'COMPLETED', 'CANCELLED'],

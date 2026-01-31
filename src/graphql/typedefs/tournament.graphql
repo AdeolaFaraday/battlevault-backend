@@ -12,14 +12,18 @@ enum TournamentFrequency {
   ONE_TIME
 }
 
+type Money {
+  amount: Float!
+  currency: String!
+}
+
 type Tournament {
   _id: ID!
   title: String!
   description: String
   gameType: String!
-  entryFee: Float
-  entryFeeCurrency: String!
-  prize: String!
+  entryFee: Money
+  prize: Money!
   status: TournamentStatus!
   frequency: TournamentFrequency!
   isPrivate: Boolean!
@@ -42,13 +46,17 @@ type TournamentRegistration {
   isRegistered: Boolean!
 }
 
+input MoneyInput {
+  amount: Float!
+  currency: String
+}
+
 input CreateTournamentInput {
   title: String!
   description: String
   gameType: String!
-  entryFee: Float
-  entryFeeCurrency: String
-  prize: String!
+  entryFee: MoneyInput
+  prize: MoneyInput!
   frequency: TournamentFrequency
   isPrivate: Boolean
   password: String
