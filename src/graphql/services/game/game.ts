@@ -14,6 +14,7 @@ import {
     getNextPlayerId
 } from "../../../services/game/ludo-logic";
 import ClientResponse from "../../../services/response";
+import { createGameSessionToken } from "../../../utils/gameSessionToken";
 
 const INITIAL_TOKENS: TokenMap = {
     blue: Array.from({ length: 4 }, (_, i) => ({ sn: i + 1, color: LudoColor.BLUE, active: false, position: 0, isSafePath: false, isFinished: false })),
@@ -199,7 +200,7 @@ export default class GameService {
         if (user) {
             finalUserId = user.id;
         } else if (name) {
-            finalUserId = `${name}-${gameId}`;
+            finalUserId = userId;
         }
 
         if (!finalUserId) return new ClientResponse(400, false, "User ID is required");
@@ -255,7 +256,8 @@ export default class GameService {
                 const existingPlayer = gameState.players.find(p => p.id === finalUserId);
                 if (existingPlayer) {
                     const { id: _, ...stateData } = gameState as any;
-                    return { ...stateData, _id: gameId };
+                    const sessionToken = createGameSessionToken(finalUserId!, gameId);
+                    return { ...stateData, _id: gameId, token: sessionToken, sessionToken };
                 }
 
                 if (gameState.players.filter(p => !!p.id).length >= 2) throw new Error("Game is full");
@@ -345,7 +347,11 @@ export default class GameService {
 
                 transaction.update(gameRef, updates);
                 const { id: __, ...stateData } = gameState as any;
-                return { ...stateData, ...updates, _id: gameId };
+
+                // NEW: Generate Game Session Token
+                const sessionToken = createGameSessionToken(finalUserId, gameId);
+
+                return { ...stateData, ...updates, _id: gameId, token: sessionToken, sessionToken }; // Sending as token/sessionToken for compatibility
             });
 
             return new ClientResponse(200, true, "Joined game successfully", this.formatGameState(result));

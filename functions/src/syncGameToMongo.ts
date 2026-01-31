@@ -3,6 +3,8 @@ import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 import mongoose from 'mongoose';
 import * as dotenv from 'dotenv';
+import { isFinalGame } from './helpers/isFinalGame';
+import { awardTournamentPrize } from './helpers/awardTournamentPrize';
 
 // Configure dotenv - look for .env in current or parent directory
 dotenv.config({ path: require('path').resolve(__dirname, '../../.env') });
@@ -182,6 +184,28 @@ export const syncGameToMongo = functions.firestore
                     }
                 }
                 // --- END TOURNAMENT PROGRESSION LOGIC ---
+
+                // --- TOURNAMENT FINAL PRIZE LOGIC ---
+                // If it's a TOURNAMENT game and finished, check if it's the final
+                if (newData.type === 'TOURNAMENT') {
+                    try {
+                        // Check if this game is a final
+                        // We pass the full game data object which has stageId, nextGameId, etc.
+                        const isFinal = await isFinalGame({ ...newData, id: gameId });
+
+                        if (isFinal) {
+                            console.log(`Game ${gameId} identified as TOURNAMENT FINAL. Processing prize...`);
+                            if (newData.tournamentId && winnerId) {
+                                await awardTournamentPrize(winnerId, newData.tournamentId);
+                            } else {
+                                console.warn(`Cannot award prize: Missing tournamentId (${newData.tournamentId}) or winnerId (${winnerId})`);
+                            }
+                        }
+                    } catch (prizeError) {
+                        console.error(`Error processing tournament prize for game ${gameId}:`, prizeError);
+                    }
+                }
+                // --- END TOURNAMENT FINAL PRIZE LOGIC ---
 
                 const playerIds = newData.players
                     .map((p: any) => p.id)

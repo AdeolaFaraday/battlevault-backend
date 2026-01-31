@@ -1,3 +1,5 @@
+import { IWallet } from "../../wallet/types/walletDoc";
+
 export type TGender = 'MALE' | 'FEMALE' | 'OTHER';
 
 export interface ICountry {
@@ -23,6 +25,7 @@ export interface IUser {
     currentStreak?: number;
     bestStreak?: number;
     country?: ICountry;
+    wallet?: IWallet;
 }
 
 export default interface UserDoc extends IUser, Document {

@@ -61,6 +61,7 @@ type LudoGameState {
   startDate: String
   createdAt: String
   updatedAt: String
+  sessionToken: String
 }
 
 input MoveInput {

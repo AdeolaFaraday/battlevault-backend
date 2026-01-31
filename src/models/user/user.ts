@@ -84,10 +84,19 @@ const userSchema: Schema = new Schema(
                 delete ret.password;
                 delete ret.__v;
             },
+            virtuals: true
         },
+        toObject: { virtuals: true },
         timestamps: true,
     }
 );
+
+userSchema.virtual('wallet', {
+    ref: 'Wallet',
+    localField: '_id',
+    foreignField: 'userId',
+    justOne: true
+});
 
 userSchema.pre('save', async function generateHash(next) {
     if (this.isModified('password')) {
