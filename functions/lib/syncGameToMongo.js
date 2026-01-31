@@ -41,6 +41,8 @@ const functions = __importStar(require("firebase-functions"));
 const admin = __importStar(require("firebase-admin"));
 const mongoose_1 = __importDefault(require("mongoose"));
 const dotenv = __importStar(require("dotenv"));
+const isFinalGame_1 = require("./helpers/isFinalGame");
+const awardTournamentPrize_1 = require("./helpers/awardTournamentPrize");
 dotenv.config({ path: require('path').resolve(__dirname, '../../.env') });
 dotenv.config();
 const MONGO_URI = process.env.MONGO_URI || '';
@@ -155,6 +157,23 @@ exports.syncGameToMongo = functions.firestore
                 }
                 catch (progressionError) {
                     console.error(`Error processing tournament progression for game ${gameId}:`, progressionError);
+                }
+            }
+            if (newData.type === 'TOURNAMENT') {
+                try {
+                    const isFinal = await (0, isFinalGame_1.isFinalGame)({ ...newData, id: gameId });
+                    if (isFinal) {
+                        console.log(`Game ${gameId} identified as TOURNAMENT FINAL. Processing prize...`);
+                        if (newData.tournamentId && winnerId) {
+                            await (0, awardTournamentPrize_1.awardTournamentPrize)(winnerId, newData.tournamentId);
+                        }
+                        else {
+                            console.warn(`Cannot award prize: Missing tournamentId (${newData.tournamentId}) or winnerId (${winnerId})`);
+                        }
+                    }
+                }
+                catch (prizeError) {
+                    console.error(`Error processing tournament prize for game ${gameId}:`, prizeError);
                 }
             }
             const playerIds = newData.players
