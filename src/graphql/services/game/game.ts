@@ -234,13 +234,7 @@ export default class GameService {
                     diceValue: [],
                     usedDiceValues: [],
                     activeDiceConfig: [],
-                    players: (mongoGame.players || []).map((p: any) => ({
-                        id: p.id || p._id?.toString(),
-                        name: p.name,
-                        color: p.color,
-                        tokens: p.tokens,
-                        slot: p.slot
-                    })),
+                    players: [], // Initialize empty, allow transaction to handle joins
                     currentTurn: "",
                     isRolling: false,
                     startDate: new Date(),
