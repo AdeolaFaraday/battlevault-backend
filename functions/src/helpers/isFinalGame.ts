@@ -9,7 +9,7 @@ import mongoose from 'mongoose';
  */
 export const isFinalGame = async (gameData: any): Promise<boolean> => {
     // Check structural criteria first (no next game)
-    if (gameData.nextGameId || gameData.nextGameSlot !== undefined) {
+    if (gameData.nextGameId || gameData.nextGameSlot !== null) {
         return false;
     }
 

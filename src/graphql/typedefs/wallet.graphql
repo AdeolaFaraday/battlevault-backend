@@ -1,0 +1,12 @@
+type Wallet {
+  _id: ID!
+  userId: ID!
+  withdrawable: Float!
+  pending: Float!
+  rewards: Float!
+  currency: String!
+}
+
+extend type Query {
+  getWallet: Response
+}

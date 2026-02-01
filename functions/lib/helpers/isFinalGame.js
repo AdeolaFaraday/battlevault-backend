@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.isFinalGame = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const isFinalGame = async (gameData) => {
-    if (gameData.nextGameId || gameData.nextGameSlot !== undefined) {
+    if (gameData.nextGameId || gameData.nextGameSlot !== null) {
         return false;
     }
     if (!gameData.stageId) {

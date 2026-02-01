@@ -21,7 +21,7 @@ export const getUserLocal = (req: any, res: any) => {
             console.log({ gotIntoTryBlock: true });
             const decoded: any = verify(token, jwt.jwtSecret as string);
             // console.log({ decoded });
-            const user = await User.findById(decoded.id);
+            const user = await User.findById(decoded.id).populate('wallet');
             // console.log({ user });
             if (!user) {
                 return null;
