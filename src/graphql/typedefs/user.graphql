@@ -22,6 +22,7 @@ type User {
   email: String
   bio: String
   country: Country
+  wallet: Wallet
 }
 
 type LeaderboardPlayer {

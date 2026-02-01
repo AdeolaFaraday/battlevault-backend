@@ -1,8 +1,16 @@
 import ClientResponse from "../../../services/response";
 import LeaderboardService from "../../services/user/leaderboard";
 import GameService from "../../services/game/game";
+import WalletService from "../../services/user/wallet";
 
 const userQueries = {
+    getWallet: async (_: any, __: any, context: any) => {
+        const user = await context.getUserLocal();
+        if (!user) {
+            return new ClientResponse(401, false, 'Unauthorized');
+        }
+        return WalletService.getWallet(user.id);
+    },
     // get user in the current context
     getUser: (_: any, __: any, context: any) => {
         return new ClientResponse(200, true, 'successful', context.currentUser);

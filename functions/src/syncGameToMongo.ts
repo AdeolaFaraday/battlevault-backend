@@ -193,6 +193,8 @@ export const syncGameToMongo = functions.firestore
                         // We pass the full game data object which has stageId, nextGameId, etc.
                         const isFinal = await isFinalGame({ ...newData, id: gameId });
 
+                        console.log({ isFinal })
+
                         if (isFinal) {
                             console.log(`Game ${gameId} identified as TOURNAMENT FINAL. Processing prize...`);
                             if (newData.tournamentId && winnerId) {

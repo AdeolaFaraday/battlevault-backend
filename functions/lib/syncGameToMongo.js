@@ -162,6 +162,7 @@ exports.syncGameToMongo = functions.firestore
             if (newData.type === 'TOURNAMENT') {
                 try {
                     const isFinal = await (0, isFinalGame_1.isFinalGame)({ ...newData, id: gameId });
+                    console.log({ isFinal });
                     if (isFinal) {
                         console.log(`Game ${gameId} identified as TOURNAMENT FINAL. Processing prize...`);
                         if (newData.tournamentId && winnerId) {

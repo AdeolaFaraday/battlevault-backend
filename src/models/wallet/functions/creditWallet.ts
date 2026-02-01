@@ -43,6 +43,4 @@ export async function creditWallet(
     return wallet;
 }
 
-export default function attachCreditWallet(schema: Schema) {
-    schema.statics.creditWallet = creditWallet;
-}
+export default creditWallet;

@@ -29,6 +29,4 @@ export async function getOrCreateWallet(
     return wallet;
 }
 
-export default function attachGetOrCreateWallet(schema: Schema) {
-    schema.statics.getOrCreateWallet = getOrCreateWallet;
-}
+export default getOrCreateWallet;

@@ -21,6 +21,7 @@ const resolvers = {
             if (obj.title) return 'Tournament';
             if (obj.stages) return 'TournamentBracket';
             if (obj.isRegistered !== undefined) return 'TournamentRegistration';
+            if (obj.withdrawable !== undefined) return 'Wallet';
 
             console.error('[GraphQL Union Resolver] Failed to resolve type for keys:', Object.keys(obj));
             return null;
