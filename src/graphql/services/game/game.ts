@@ -212,10 +212,22 @@ export default class GameService {
             // Check if game exists in Firestore
             let doc = await gameRef.get();
 
+            // Fetch Mongo document to check type and authorized players
+            const mongoGame = await Game.findById(gameId).lean();
+            if (!mongoGame) {
+                return new ClientResponse(404, false, "Game not found in database");
+            }
+
+            // Security Check: If it's a tournament game, check if the user is in the players document in MongoDB
+            if (mongoGame.type === 'TOURNAMENT') {
+                const isAuthorized = mongoGame.players?.some(p => p.id === finalUserId);
+                if (!isAuthorized) {
+                    return new ClientResponse(403, false, "You are not authorized to join this tournament match");
+                }
+            }
+
             if (!doc.exists) {
-                // Check MongoDB if it's a tournament game
-                const mongoGame = await Game.findById(gameId).lean();
-                if (!mongoGame || mongoGame.type !== 'TOURNAMENT') {
+                if (mongoGame.type !== 'TOURNAMENT') {
                     return new ClientResponse(404, false, "Game not found");
                 }
 
