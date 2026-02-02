@@ -168,7 +168,7 @@ export default class TournamentService {
     static async registerForTournament(tournamentId: string, password: string | undefined, context: any) {
         try {
             const user = await context.getUserLocal();
-            if (!user) return new ClientResponse(401, false, "Unauthorized");
+            if (!user) return new ClientResponse(401, false, "Unauthorized / Please login to perform this action");
 
             const tournament = await Tournament.findById(tournamentId);
             if (!tournament) return new ClientResponse(404, false, "Tournament not found");

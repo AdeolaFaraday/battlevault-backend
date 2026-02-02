@@ -7,7 +7,7 @@ const userQueries = {
     getWallet: async (_: any, __: any, context: any) => {
         const user = await context.getUserLocal();
         if (!user) {
-            return new ClientResponse(401, false, 'Unauthorized');
+            return new ClientResponse(401, false, 'Unauthorized / Please login to view');
         }
         return WalletService.getWallet(user.id);
     },
@@ -18,7 +18,7 @@ const userQueries = {
     getUserStats: async (_: any, __: any, context: any) => {
         const user = await context.getUserLocal();
         if (!user) {
-            return new ClientResponse(401, false, 'Unauthorized');
+            return new ClientResponse(401, false, 'Unauthorized / Please login to view');
         }
 
         const totalGamesPlayed = user.totalGamesPlayed ?? 0;
