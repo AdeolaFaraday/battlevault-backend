@@ -116,7 +116,7 @@ export default class AuthService {
       const currentUser = context.currentUser;
 
       if (!currentUser) {
-        return new ClientResponse(401, false, 'Unauthorized', null);
+        return new ClientResponse(401, false, 'Unauthorized / Please login to perform this action', null);
       }
 
       const updates: any = {};

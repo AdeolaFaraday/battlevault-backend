@@ -10,7 +10,7 @@ export const logout = (req: any, res: Response) => {
             });
             return;
         } else {
-            throw new Error('Unauthorized');
+            throw new Error('Unauthorized / Please login to perform this action');
         }
     };
 };
