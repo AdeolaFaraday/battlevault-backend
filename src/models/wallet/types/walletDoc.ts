@@ -1,12 +1,13 @@
 import { Document, Types } from 'mongoose';
 
-export type WalletField = 'withdrawable' | 'pending' | 'rewards';
+export type WalletField = 'withdrawable' | 'pending' | 'rewards' | 'locked';
 
 export interface IWallet {
     userId: Types.ObjectId;
     withdrawable: number;
     pending: number;
     rewards: number;
+    locked: number;
     currency: string;
 }
 

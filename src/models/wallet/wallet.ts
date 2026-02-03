@@ -30,6 +30,11 @@ const walletSchema = new Schema(
             default: 0,
             min: 0
         },
+        locked: {
+            type: Number,
+            default: 0,
+            min: 0
+        },
         currency: {
             type: String,
             default: 'NGN'
