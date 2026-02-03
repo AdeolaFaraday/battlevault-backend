@@ -29,11 +29,16 @@ const loadAppEnvs = () => {
         jwtExp: process.env.JWT_EXP,
     };
 
-    return { port, env, db, jwt, whitelist };
+    const paystack = {
+        secretKey: process.env.PAYSTACK_SECRET_KEY,
+        webhookSecret: process.env.PAYSTACK_WEBHOOK_SECRET,
+    };
+
+    return { port, env, db, jwt, paystack, whitelist };
 };
 
-const { port, env, db, jwt, whitelist } = loadAppEnvs();
+const { port, env, db, jwt, paystack, whitelist } = loadAppEnvs();
 
-export { port, env, db, jwt, whitelist };
+export { port, env, db, jwt, paystack, whitelist };
 
 export default loadAppEnvs;

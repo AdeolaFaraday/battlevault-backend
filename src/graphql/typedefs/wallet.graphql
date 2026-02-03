@@ -4,9 +4,50 @@ type Wallet {
   withdrawable: Float!
   pending: Float!
   rewards: Float!
+  locked: Float!
   currency: String!
+}
+
+type Bank {
+  _id: ID!
+  userId: ID!
+  accountName: String!
+  accountNumber: String!
+  bankName: String!
+  bankCode: String!
+  isDefault: Boolean!
+}
+
+type BankList {
+  banks: [Bank]
+  isLocal: Boolean
+}
+
+type PaystackBank {
+  name: String!
+  code: String!
+  slug: String
+}
+
+type PaystackBankList {
+  banks: [PaystackBank!]!
+}
+
+type AccountVerification {
+  accountNumber: String!
+  accountName: String!
+  bankId: Int
 }
 
 extend type Query {
   getWallet: Response
+  getSavedBanks: Response
+  listBanks: Response
+  verifyBankAccount(accountNumber: String!, bankCode: String!): Response
 }
+
+extend type Mutation {
+  createTransferRecipient(accountNumber: String!, bankCode: String!): Response
+  withdrawWinnings(amount: Float!, bankId: ID!): Response
+}
+

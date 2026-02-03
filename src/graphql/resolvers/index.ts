@@ -4,6 +4,7 @@ import { GraphQLUpload } from "graphql-upload";
 import { userQueries, userMutations } from './user';
 import { gameQueries, gameMutations } from './game';
 import { tournamentQueries, tournamentMutations } from './tournament';
+import { walletMutations, walletQueries } from './wallet';
 
 
 const resolvers = {
@@ -22,6 +23,10 @@ const resolvers = {
             if (obj.stages) return 'TournamentBracket';
             if (obj.isRegistered !== undefined) return 'TournamentRegistration';
             if (obj.withdrawable !== undefined) return 'Wallet';
+            if (obj.bankName !== undefined && obj.accountNumber !== undefined && obj.recipientCode !== undefined) return 'Bank';
+            if (obj.isLocal) return 'BankList';
+            if (obj.banks !== undefined && Array.isArray(obj.banks)) return 'PaystackBankList';
+            if (obj.accountName !== undefined && obj.accountNumber !== undefined && obj.bankId !== undefined) return 'AccountVerification';
 
             console.error('[GraphQL Union Resolver] Failed to resolve type for keys:', Object.keys(obj));
             return null;
@@ -31,11 +36,13 @@ const resolvers = {
         ...userQueries,
         ...gameQueries,
         ...tournamentQueries,
+        ...walletQueries,
     },
     Mutation: {
         ...userMutations,
         ...gameMutations,
         ...tournamentMutations,
+        ...walletMutations,
     }
 }
 

@@ -31,7 +31,8 @@ export async function creditWallet(
                 // Set other fields to 0 if creating new wallet
                 ...(field !== 'withdrawable' && { withdrawable: 0 }),
                 ...(field !== 'pending' && { pending: 0 }),
-                ...(field !== 'rewards' && { rewards: 0 })
+                ...(field !== 'rewards' && { rewards: 0 }),
+                ...(field !== 'locked' && { locked: 0 })
             }
         },
         {
