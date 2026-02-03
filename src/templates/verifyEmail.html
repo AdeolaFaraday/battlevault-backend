@@ -2,86 +2,184 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Verify Your Email - BattleVault</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Arena Awaits - BattleVault</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap');
+
         body {
-            font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #1a1f2b, #2c3e50);
             margin: 0;
             padding: 0;
+            background-color: #0f111a;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            color: #ffffff;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .wrapper {
+            width: 100%;
+            table-layout: fixed;
+            background-color: #0f111a;
+            padding-bottom: 40px;
         }
 
         .container {
             max-width: 600px;
-            margin: 20px auto;
-            background: #161b22;
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+            margin: 0 auto;
+            background-color: #161b22;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #2f343e;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #493D9E 0%, #D72638 100%);
+            padding: 40px 20px;
             text-align: center;
         }
 
         .logo {
-            width: 150px;
-            margin-bottom: 20px;
+            width: 80px;
+            height: auto;
+            margin-bottom: 10px;
+        }
+
+        .content {
+            padding: 40px;
+            text-align: center;
         }
 
         h1 {
-            font-size: 22px;
-            margin-bottom: 10px;
-            color: #58a6ff;
+            font-size: 28px;
+            font-weight: 800;
+            margin: 0 0 20px;
+            letter-spacing: -0.5px;
+            text-transform: uppercase;
+            color: #ffffff;
         }
 
         p {
             font-size: 16px;
-            margin-bottom: 20px;
-            line-height: 1.5;
-            color: #ffffff;
+            line-height: 1.6;
+            margin: 0 0 30px;
+            color: #c9d1d9;
+        }
+
+        .btn-container {
+            margin-bottom: 30px;
         }
 
         .btn {
             display: inline-block;
-            background: #58a6ff;
-            color: #ffffff;
-            padding: 12px 20px;
+            background: #F9A602;
+            color: #000000 !important;
+            padding: 16px 36px;
             font-size: 18px;
-            font-weight: bold;
-            border-radius: 5px;
+            font-weight: 700;
             text-decoration: none;
-            margin-top: 10px;
+            border-radius: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 14px rgba(249, 166, 2, 0.4);
+            transition: transform 0.2s ease;
         }
 
-        .btn:hover {
-            background: #1f6feb;
+        .link-text {
+            font-size: 13px;
+            color: #8b949e;
+            word-break: break-all;
+            margin-top: 20px;
         }
 
         .footer {
-            margin-top: 20px;
+            padding: 30px 40px;
+            background-color: #0d1117;
+            text-align: center;
+            border-top: 1px solid #2f343e;
+        }
+
+        .footer-text {
             font-size: 12px;
             color: #8b949e;
+            line-height: 1.5;
+            margin: 0;
         }
 
         .footer a {
-            color: #58a6ff;
+            color: #4169E1;
             text-decoration: none;
+        }
+
+        .divider {
+            height: 1px;
+            background: #2f343e;
+            margin: 20px 0;
+            border: none;
+        }
+
+        /* Mobile Adjustments */
+        @media screen and (max-width: 600px) {
+            .content {
+                padding: 30px 20px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
         }
     </style>
 </head>
 
 <body>
-    <div class="container">
-        <img src="" alt="BattleVault Logo" class="logo" />
-        <h1>Welcome to BattleVault!</h1>
-        <p>You're one step away from competing in thrilling, winner-takes-all games like Ludo and Chess. Click below to
-            verify your email and start your journey to becoming a champion.</p>
-        <a href="{{verificationLink}}" class="btn">Verify Email</a>
-        <p>If the button above doesn't work, copy and paste this link into your browser:</p>
-        <p><a href="{{verificationLink}}" style="color: #58a6ff;">{{verificationLink}}</a></p>
-        <hr style="border: 0.5px solid #2f343e; margin-top: 20px;" />
-        <p class="footer">If you did not create an account on BattleVault, please ignore this email or <a
-                href="https://battlevault.com/contact">contact support</a>.</p>
+    <div class="wrapper">
+        <div style="height: 40px;"></div>
+        <div class="container">
+            <div class="header">
+                <!-- Replace with your actual hosted logo URL -->
+                <img src="https://battlevault.app/logo.png" alt="BattleVault" class="logo"
+                    onerror="this.style.display='none'">
+                <div style="font-size: 24px; font-weight: 800; letter-spacing: 2px;">BATTLEVAULT</div>
+            </div>
+
+            <div class="content">
+                <h1>The Arena Awaits, Champion.</h1>
+                <p>
+                    You've been summoned to <strong>BattleVault</strong>. Your journey to the top of the leaderboard
+                    starts here.
+                    Prepare to compete in thrilling, high-stakes matches of Ludo, Chess, and more.
+                </p>
+
+                <div class="btn-container">
+                    <a href="{{verificationLink}}" class="btn">CLAIM YOUR VAULT</a>
+                </div>
+
+                <p style="font-size: 14px;">
+                    Once verified, you'll have full access to tournaments, real-time battles, and winner-takes-all
+                    rewards.
+                </p>
+
+                <div class="divider"></div>
+
+                <p class="link-text">
+                    Button not working? Copy and paste this into your browser:<br>
+                    <a href="{{verificationLink}}" style="color: #4169E1;">{{verificationLink}}</a>
+                </p>
+            </div>
+
+            <div class="footer">
+                <p class="footer-text">
+                    You received this because you registered for an account at battlevault.app.<br>
+                    Not you? Someone might be trying to challenge your glory. <a
+                        href="https://battlevault.app/contact">Contact Support</a>.
+                </p>
+                <p class="footer-text" style="margin-top: 10px;">
+                    &copy; 2026 BattleVault. All rights reserved.
+                </p>
+            </div>
+        </div>
+        <div style="height: 40px;"></div>
     </div>
 </body>
 
