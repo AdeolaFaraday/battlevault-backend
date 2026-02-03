@@ -1,8 +1,8 @@
 // di/container.ts
 import { EmailService } from './EmailService';
-import { SesProvider } from './SesProvider';
+import { MailgunProvider } from './MailgunProvider';
 
-const emailProvider = new SesProvider();
+const emailProvider = new MailgunProvider();
 const emailService = new EmailService(emailProvider);
 
 export { emailService };
