@@ -15,7 +15,7 @@ export class MailgunProvider implements EmailProvider {
         this.mg = mailgun.client({
             username: 'api',
             key: process.env.MAILGUN_API_KEY || 'API_KEY',
-            url: "https://api.eu.mailgun.net"
+            url: process.env.MAILGUN_BASE || 'https://api.eu.mailgun.net'
         });
         this.domain = process.env.MAILGUN_DOMAIN || 'mail.battlevault.app';
     }
