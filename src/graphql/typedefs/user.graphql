@@ -68,6 +68,7 @@ input UpdateUserProfileInput {
 
 type Query {
   # User
+  me: Response
   getUser: Response
   getUserStats: Response
   getUserGames(limit: Int, page: Int, search: String): Response

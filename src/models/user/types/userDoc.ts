@@ -1,3 +1,4 @@
+import { Document } from "mongoose";
 import { IWallet } from "../../wallet/types/walletDoc";
 
 export type TGender = 'MALE' | 'FEMALE' | 'OTHER';
