@@ -2,6 +2,7 @@ import ClientResponse from "../../../services/response";
 import LeaderboardService from "../../services/user/leaderboard";
 import GameService from "../../services/game/game";
 import WalletService from "../../services/user/wallet";
+import authenticatedRequest from "../../authenticatedRequest";
 
 const userQueries = {
     getWallet: async (_: any, __: any, context: any) => {
@@ -12,11 +13,14 @@ const userQueries = {
         return WalletService.getWallet(user.id);
     },
     // get user in the current context
-    getUser: (_: any, __: any, context: any) => {
+    me: authenticatedRequest(async (_: any, __: any, context: any) => {
+        return new ClientResponse(200, true, 'successful', { user: context.currentUser });
+    }),
+    getUser: authenticatedRequest(async (_: any, __: any, context: any) => {
         return new ClientResponse(200, true, 'successful', context.currentUser);
-    },
-    getUserStats: async (_: any, __: any, context: any) => {
-        const user = await context.getUserLocal();
+    }),
+    getUserStats: authenticatedRequest(async (_: any, __: any, context: any) => {
+        const user = context.currentUser;
         if (!user) {
             return new ClientResponse(401, false, 'Unauthorized / Please login to view');
         }
@@ -37,14 +41,14 @@ const userQueries = {
             currentStreak,
             bestStreak,
         });
-    },
-    getUserGames: async (
+    }),
+    getUserGames: authenticatedRequest(async (
         _: any,
         { limit, page, search }: { limit?: number; page?: number; search?: string },
         context: any
     ) => {
         return GameService.getUserGames(context, page, limit, search);
-    },
+    }),
     getLeaderboard: async (_: any, { limit, page, search }: { limit?: number; page?: number; search?: string }) => {
         return LeaderboardService.getLeaderboard({ limit, page, search });
     },

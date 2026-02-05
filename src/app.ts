@@ -1,4 +1,4 @@
-import express, { Request, Response } from "express"
+import express from "express"
 import httpServer from "http"
 import { graphqlUploadExpress } from "graphql-upload";
 import cors from 'cors';
@@ -14,6 +14,7 @@ import PaystackService from "./services/paystack";
 import Wallet from "./models/wallet/wallet";
 import User from "./models/user/user";
 import Transaction from "./models/transaction";
+import GoogleAuthService from "./services/auth/googleAuth";
 
 
 const App = async () => {
@@ -156,6 +157,37 @@ const App = async () => {
         }
 
         res.sendStatus(200);
+    });
+
+    app.get("/auth/google/callback", async (req, res) => {
+        const code = req.query.code as string;
+
+        if (!code) {
+            return res.redirect(
+                `${process.env.CLIENT_URL}/signin?error=missing_code`
+            );
+        }
+
+        try {
+            // 1. Verify code and get Google payload
+            const payload = await GoogleAuthService.verifyCode(code);
+
+            // 2. Find or create user
+            const user = await GoogleAuthService.findOrCreateUser(payload);
+
+            // 3. Generate token
+            const token = GoogleAuthService.generateToken(user);
+
+            // 4. Redirect to frontend with token
+            return res.redirect(
+                `${process.env.CLIENT_URL}/auth/callback?token=${token}`
+            );
+        } catch (err) {
+            console.error("Google OAuth error:", err);
+            return res.redirect(
+                `${process.env.CLIENT_URL}/signin?error=google_auth_failed`
+            );
+        }
     });
 
     app.use(

@@ -12,7 +12,7 @@ const resolvers = {
     Upload: GraphQLUpload,
     ResponseData: {
         __resolveType(obj: any, _: any, __: any) {
-            if (obj.user && obj.token) return 'AuthPayload';
+            if (obj.user && (obj.token || 'experiencePoints' in obj.user)) return 'AuthPayload';
             if (obj.totalGamesPlayed !== undefined && obj.totalWins !== undefined) return 'UserStats';
             if (obj.tournaments) return 'TournamentList';
             if (obj.games) return 'GameList';
