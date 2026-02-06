@@ -15,6 +15,7 @@ import Wallet from "./models/wallet/wallet";
 import User from "./models/user/user";
 import Transaction from "./models/transaction";
 import GoogleAuthService from "./services/auth/googleAuth";
+import { setCookie } from "./graphql/services/auth/functions/authenticate";
 
 
 const App = async () => {
@@ -178,9 +179,12 @@ const App = async () => {
             // 3. Generate token
             const token = GoogleAuthService.generateToken(user);
 
-            // 4. Redirect to frontend with token
+            // 4. Set cookie
+            setCookie(token, user, res);
+
+            // 5. Redirect to frontend with token
             return res.redirect(
-                `${process.env.CLIENT_URL}/auth/callback?token=${token}`
+                `${process.env.CLIENT_URL}/auth/callback`
             );
         } catch (err) {
             console.error("Google OAuth error:", err);

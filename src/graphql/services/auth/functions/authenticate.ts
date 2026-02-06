@@ -7,7 +7,7 @@ import User from "../../../../models/user/user";
 
 const jwtSecret: any = jwtEnv.jwtSecret;
 const jwtExp: any = jwtEnv.jwtExp;
-const setCookie = (authToken: any, user: any, res: any) => {
+export const setCookie = (authToken: any, user: any, res: any) => {
     res.cookie('user_token', authToken, {
         httpOnly: true,
         secure: true,      // Cloud Run = HTTPS
@@ -48,7 +48,7 @@ export const authenticate = (req: Request, res: Response) => {
             try {
                 if (JSON.parse(password).isValidated) {
                     const token = loginUser(matchingUser, res);
-                    return { user: matchingUser, token };
+                    return { user: matchingUser };
                 }
                 throw new Error('An error occurred during authentication');
             } catch (error) {
@@ -58,7 +58,7 @@ export const authenticate = (req: Request, res: Response) => {
                 );
                 if (isMatch) {
                     const token = loginUser(matchingUser, res);
-                    return { user: matchingUser, token };
+                    return { user: matchingUser };
                 } else {
                     throw new Error('Invalid email and password combination!');
                 }
