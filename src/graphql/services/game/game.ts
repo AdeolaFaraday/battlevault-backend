@@ -1,6 +1,7 @@
 import Game from "../../../models/game/game";
 import RealtimeProviderFactory from "../../../services/realtime";
 import { admin } from "../../../services/auth";
+import TournamentStage from "../../../models/tournament/tournamentStage";
 import {
     LudoColor,
     LudoStatus,
@@ -223,6 +224,12 @@ export default class GameService {
                 const isAuthorized = mongoGame.players?.some(p => p.id === finalUserId);
                 if (!isAuthorized) {
                     return new ClientResponse(403, false, "You are not authorized to join this tournament match");
+                }
+
+                // Stage Status Check: Ensure the stage is ACTIVE
+                const stage = await TournamentStage.findById(mongoGame.stageId);
+                if (!stage || stage.status === 'PENDING') {
+                    return new ClientResponse(400, false, "This tournament stage has not started yet or the previous stage is not completed.");
                 }
             }
 

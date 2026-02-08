@@ -209,6 +209,47 @@ export const syncGameToMongo = functions.firestore
                 }
                 // --- END TOURNAMENT FINAL PRIZE LOGIC ---
 
+                // --- TOURNAMENT STAGE COMPLETION LOGIC ---
+                if (newData.type === 'TOURNAMENT' && newData.stageId) {
+                    try {
+                        console.log(`Checking Stage Completion for Stage ${newData.stageId}`);
+                        const stageSchema = new mongoose.Schema({}, { strict: false, timestamps: true });
+                        const TournamentStage = mongoose.models.TournamentStage || mongoose.model('TournamentStage', stageSchema);
+                        const tournamentSchema = new mongoose.Schema({}, { strict: false, timestamps: true });
+                        const Tournament = mongoose.models.Tournament || mongoose.model('Tournament', tournamentSchema);
+
+                        const stageId = newData.stageId;
+                        const stage = await TournamentStage.findById(stageId);
+
+                        if (stage && stage.status !== 'COMPLETED') {
+                            const gamesInStage = await Game.find({ stageId: stageId });
+                            const allFinished = gamesInStage.every((g: any) => g.status === 'finished');
+
+                            if (allFinished) {
+                                await TournamentStage.findByIdAndUpdate(stageId, { status: 'COMPLETED' });
+                                console.log(`Stage ${stageId} marked as COMPLETED`);
+
+                                const nextStage = await TournamentStage.findOne({
+                                    tournamentId: stage.tournamentId,
+                                    index: (stage as any).index + 1
+                                });
+
+                                if (nextStage) {
+                                    await TournamentStage.findByIdAndUpdate(nextStage._id, { status: 'ACTIVE' });
+                                    await Tournament.findByIdAndUpdate(stage.tournamentId, { currentStage: nextStage._id });
+                                    console.log(`Next stage ${nextStage._id} marked as ACTIVE`);
+                                } else {
+                                    await Tournament.findByIdAndUpdate(stage.tournamentId, { status: 'COMPLETED' });
+                                    console.log(`Tournament ${stage.tournamentId} marked as COMPLETED`);
+                                }
+                            }
+                        }
+                    } catch (stageError) {
+                        console.error(`Error processing stage completion for game ${gameId}:`, stageError);
+                    }
+                }
+                // --- END TOURNAMENT STAGE COMPLETION LOGIC ---
+
                 const playerIds = newData.players
                     .map((p: any) => p.id)
 

@@ -72,7 +72,8 @@ const gameSchema: Schema = new Schema(
         },
         usedDiceValues: [{ type: Number }],
         activeDiceConfig: [{ type: Number }],
-        lastMoverId: { type: String }
+        lastMoverId: { type: String },
+        winner: { type: String }
     },
     {
         timestamps: true,

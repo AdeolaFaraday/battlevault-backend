@@ -39,6 +39,7 @@ export interface TokenMap {
 export interface LudoGameState {
     id: string;
     type?: string;
+    stageId?: string;
     players: LudoPlayer[];
     currentTurn: string;
     diceValue: number[];
