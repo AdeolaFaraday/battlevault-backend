@@ -109,6 +109,7 @@ export default class AuthService {
       firstName?: string;
       lastName?: string;
       bio?: string;
+      avatar?: string;
     },
     context: any
   ) {
@@ -123,6 +124,10 @@ export default class AuthService {
 
       if (typeof updateInput.firstName === 'string') {
         updates.firstName = updateInput.firstName;
+      }
+
+      if (typeof updateInput.avatar === 'string') {
+        updates.avatar = updateInput.avatar;
       }
 
       if (typeof updateInput.lastName === 'string') {
@@ -177,6 +182,44 @@ export default class AuthService {
         500,
         false,
         err.message || 'Failed to update profile',
+        null
+      );
+    }
+  }
+
+  static async requestPasswordReset({ email }: { email: string }) {
+    try {
+      const result = await User.requestPasswordReset({ email });
+      return new ClientResponse(
+        200,
+        result.success,
+        result.message,
+        null
+      );
+    } catch (err: any) {
+      return new ClientResponse(
+        500,
+        false,
+        err.message || 'Failed to send password reset email',
+        null
+      );
+    }
+  }
+
+  static async resetPassword({ token, newPassword }: { token: string; newPassword: string }) {
+    try {
+      const result = await User.resetPassword({ token, newPassword });
+      return new ClientResponse(
+        result.success ? 200 : 400,
+        result.success,
+        result.message,
+        null
+      );
+    } catch (err: any) {
+      return new ClientResponse(
+        500,
+        false,
+        err.message || 'Failed to reset password',
         null
       );
     }

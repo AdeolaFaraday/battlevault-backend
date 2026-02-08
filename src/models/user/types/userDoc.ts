@@ -27,6 +27,8 @@ export interface IUser {
     bestStreak?: number;
     country?: ICountry;
     wallet?: IWallet;
+    passwordResetToken?: string;
+    passwordResetExpires?: Date;
 }
 
 export default interface UserDoc extends IUser, Document {

@@ -1,0 +1,25 @@
+# File Upload Schema
+
+type UploadedFile {
+  url: String!
+  fileName: String!
+}
+
+type UploadedFiles {
+  files: [UploadedFile!]!
+}
+
+union UploadResponseData = UploadedFile | UploadedFiles
+
+type Mutation {
+  # Upload a single file to Firebase Storage
+  # Returns the public URL of the uploaded file
+  uploadFile(file: Upload!, folder: String): Response
+
+  # Upload multiple files to Firebase Storage
+  # Returns an array of public URLs
+  uploadMultipleFiles(files: [Upload!]!, folder: String): Response
+
+  # Delete a file from Firebase Storage
+  deleteFile(fileName: String!): Response
+}

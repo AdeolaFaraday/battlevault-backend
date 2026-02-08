@@ -16,6 +16,7 @@ import User from "./models/user/user";
 import Transaction from "./models/transaction";
 import GoogleAuthService from "./services/auth/googleAuth";
 import { setCookie } from "./graphql/services/auth/functions/authenticate";
+import uploadRoutes from "./routes/upload";
 
 
 const App = async () => {
@@ -198,6 +199,8 @@ const App = async () => {
         '/graphql',
         graphqlUploadExpress({ maxFileSize: 10000000, maxFiles: 10 })
     );
+
+    app.use('/api', uploadRoutes);
 
     await graphqlServer.start();
 

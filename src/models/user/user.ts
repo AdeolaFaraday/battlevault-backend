@@ -46,6 +46,12 @@ const userSchema: Schema = new Schema(
         emailVerificationToken: {
             type: String,
         },
+        passwordResetToken: {
+            type: String,
+        },
+        passwordResetExpires: {
+            type: Date,
+        },
         profileStatus: {
             type: String,
             default: 'ACTIVE',
