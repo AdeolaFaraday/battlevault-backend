@@ -21,6 +21,7 @@ type User {
   lastName: String
   email: String
   bio: String
+  avatar: String
   country: Country
   wallet: Wallet
 }
@@ -64,6 +65,7 @@ input UpdateUserProfileInput {
   firstName: String
   lastName: String
   bio: String
+  avatar: String
 }
 
 type Query {
@@ -88,4 +90,6 @@ type Mutation {
   updateUserProfile(
     args: UpdateUserProfileInput
   ): Response
+  requestPasswordReset(email: String!): Response
+  resetPassword(token: String!, newPassword: String!): Response
 }

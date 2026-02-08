@@ -5,6 +5,7 @@ import { userQueries, userMutations } from './user';
 import { gameQueries, gameMutations } from './game';
 import { tournamentQueries, tournamentMutations } from './tournament';
 import { walletMutations, walletQueries } from './wallet';
+import { uploadMutations } from './upload';
 
 
 const resolvers = {
@@ -27,6 +28,8 @@ const resolvers = {
             if (obj.isLocal) return 'BankList';
             if (obj.banks !== undefined && Array.isArray(obj.banks)) return 'PaystackBankList';
             if (obj.accountName !== undefined && obj.accountNumber !== undefined && obj.bankId !== undefined) return 'AccountVerification';
+            if (obj.url && obj.fileName && !obj.user) return 'UploadedFile';
+            if (obj.files && Array.isArray(obj.files)) return 'UploadedFiles';
 
             console.error('[GraphQL Union Resolver] Failed to resolve type for keys:', Object.keys(obj));
             return null;
@@ -43,6 +46,7 @@ const resolvers = {
         ...gameMutations,
         ...tournamentMutations,
         ...walletMutations,
+        ...uploadMutations,
     }
 }
 

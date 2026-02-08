@@ -66,6 +66,7 @@ const userMutations = {
                     firstName?: string;
                     lastName?: string;
                     bio?: string;
+                    avatar?: string;
                 };
             },
             context: any
@@ -77,6 +78,28 @@ const userMutations = {
             }
         }
     ),
+    requestPasswordReset: async (
+        _: any,
+        { email }: { email: string },
+        context: any
+    ) => {
+        try {
+            return await AuthService.requestPasswordReset({ email });
+        } catch (err: any) {
+            return new ClientResponse(500, false, err.message, null);
+        }
+    },
+    resetPassword: async (
+        _: any,
+        { token, newPassword }: { token: string; newPassword: string },
+        context: any
+    ) => {
+        try {
+            return await AuthService.resetPassword({ token, newPassword });
+        } catch (err: any) {
+            return new ClientResponse(500, false, err.message, null);
+        }
+    },
 }
 
 export default userMutations;
