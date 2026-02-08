@@ -236,7 +236,13 @@ export default class TournamentService {
             const games = await Game.find({ tournamentId }).sort({ createdAt: 1 }).lean();
 
             const bracketData = stages.map(stage => {
-                const stageGames = games.filter(g => g.stageId?.toString() === stage._id.toString());
+                const stageGames = games
+                    .filter(g => g.stageId?.toString() === stage._id.toString())
+                    .sort((a, b) => {
+                        const matchA = parseInt(a.name.split('Match ')[1]) || 0;
+                        const matchB = parseInt(b.name.split('Match ')[1]) || 0;
+                        return matchA - matchB;
+                    });
                 return {
                     ...stage,
                     games: stageGames
@@ -264,6 +270,51 @@ export default class TournamentService {
             return new ClientResponse(200, true, "Registration status retrieved", { isRegistered });
         } catch (error: any) {
             return new ClientResponse(500, false, error.message);
+        }
+    }
+
+    static async handleGameCompletion(stageId: string) {
+        try {
+            const stage = await TournamentStage.findById(stageId);
+            if (!stage || stage.status === 'COMPLETED') return;
+
+            // Check if all games in this stage are finished in MongoDB
+            const gamesInStage = await Game.find({ stageId: stage._id });
+            const allFinished = gamesInStage.every(g => g.status === 'finished');
+
+            if (allFinished) {
+                // 1. Mark current stage as COMPLETED
+                stage.status = 'COMPLETED';
+                await stage.save();
+
+                // 2. Find next stage for this tournament
+                const tournamentId = stage.tournamentId;
+                const nextStage = await TournamentStage.findOne({
+                    tournamentId,
+                    index: stage.index + 1
+                });
+
+                if (nextStage) {
+                    // 3. Activate next stage
+                    nextStage.status = 'ACTIVE';
+                    await nextStage.save();
+
+                    // Update Tournament's currentStage
+                    await Tournament.findByIdAndUpdate(tournamentId, {
+                        currentStage: nextStage._id
+                    });
+
+                    console.log(`Tournament stage ${stage.name} completed. Next stage ${nextStage.name} is now ACTIVE.`);
+                } else {
+                    // Final Stage Completed
+                    await Tournament.findByIdAndUpdate(tournamentId, {
+                        status: 'COMPLETED'
+                    });
+                    console.log(`Tournament ${tournamentId} has been completed.`);
+                }
+            }
+        } catch (error: any) {
+            console.error('Error handling tournament game completion:', error.message);
         }
     }
 }

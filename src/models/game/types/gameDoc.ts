@@ -21,6 +21,7 @@ export interface LudoGameState {
     diceValue: number[];
     isRolling: boolean;
     status: string;
+    winner?: string;
     tokens?: any;
     usedDiceValues: number[];
     activeDiceConfig: number[];
@@ -35,6 +36,7 @@ interface GameDoc extends Document, LudoGameState {
     nextGameId?: string;
     nextGameSlot?: number | string;
     startDate?: Date;
+    winner?: string;
     createdAt: Date;
     updatedAt: Date;
 }
