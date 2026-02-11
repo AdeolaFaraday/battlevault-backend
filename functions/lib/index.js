@@ -33,9 +33,11 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.syncGameToMongo = void 0;
+exports.aiOrchestrator = exports.syncGameToMongo = void 0;
 const admin = __importStar(require("firebase-admin"));
 admin.initializeApp();
 var syncGameToMongo_1 = require("./syncGameToMongo");
 Object.defineProperty(exports, "syncGameToMongo", { enumerable: true, get: function () { return syncGameToMongo_1.syncGameToMongo; } });
+var aiOrchestrator_1 = require("./aiOrchestrator");
+Object.defineProperty(exports, "aiOrchestrator", { enumerable: true, get: function () { return aiOrchestrator_1.aiOrchestrator; } });
 //# sourceMappingURL=index.js.map

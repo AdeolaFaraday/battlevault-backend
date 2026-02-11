@@ -11,6 +11,10 @@ const gameMutations = {
         return await GameService.createFreeGame(name);
     },
 
+    createAIGame: async (_: any, { name }: { name: string }, context: any) => {
+        return await GameService.createAIGame(name);
+    },
+
     joinGame: authenticatedRequest(async (_: any, { gameId, userId, name }: { gameId: string, userId?: string, name: string }, context: any) => {
         return await GameService.joinGame(gameId, userId, name, context);
     }, true),

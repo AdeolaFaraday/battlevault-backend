@@ -94,6 +94,7 @@ extend type Query {
 extend type Mutation {
   createGame(input: CreateGameInput): Response
   createFreeGame(name: String!): Response!
+  createAIGame(name: String!): Response!
   rollDice(gameId: ID!, name: String): Response!
   processMove(gameId: ID!, input: MoveInput!, name: String): Response!
   joinGame(gameId: ID!, userId: ID, name: String!): Response!
