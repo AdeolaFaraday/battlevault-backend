@@ -181,11 +181,11 @@ const App = async () => {
             const token = GoogleAuthService.generateToken(user);
 
             // 4. Set cookie
-            setCookie(token, user, res);
+            // setCookie(token, user, res);
 
             // 5. Redirect to frontend with token
             return res.redirect(
-                `${process.env.CLIENT_URL}/auth/callback`
+                `${process.env.CLIENT_URL}/auth/callback?token=${token}`
             );
         } catch (err) {
             console.error("Google OAuth error:", err);

@@ -48,7 +48,7 @@ export const authenticate = (req: Request, res: Response) => {
             try {
                 if (JSON.parse(password).isValidated) {
                     const token = loginUser(matchingUser, res);
-                    return { user: matchingUser };
+                    return { user: matchingUser, token };
                 }
                 throw new Error('An error occurred during authentication');
             } catch (error) {
@@ -58,7 +58,7 @@ export const authenticate = (req: Request, res: Response) => {
                 );
                 if (isMatch) {
                     const token = loginUser(matchingUser, res);
-                    return { user: matchingUser };
+                    return { user: matchingUser, token };
                 } else {
                     throw new Error('Invalid email and password combination!');
                 }
