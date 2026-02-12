@@ -1,5 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.buildGameStateDescription = buildGameStateDescription;
+exports.buildLegalMovesDescription = buildLegalMovesDescription;
+exports.buildPrompt = buildPrompt;
+exports.generateLegalMoves = generateLegalMoves;
 exports.llmPickMove = llmPickMove;
 const ludoLogic_1 = require("./ludoLogic");
 const aiEngine_1 = require("./aiEngine");
@@ -76,8 +80,9 @@ LUDO STRATEGY TIPS:
 - Consider risk vs reward: advancing far-ahead tokens on main board is risky
 
 INSTRUCTIONS:
-Pick the single best move number (0 to ${moveCount - 1}). 
-Respond with ONLY a JSON object in this exact format, no other text:
+Pick the single best move number (0 to ${moveCount - 1}).
+Respond with ONLY a valid JSON object. Do not include any markdown formatting, code blocks, or conversational text.
+Format:
 {"move": <number>, "reasoning": "<brief explanation>"}`;
 }
 function generateLegalMoves(state, player) {
@@ -147,7 +152,8 @@ function checkCapture(state, playerColors, targetPos, isSafe) {
     return false;
 }
 async function callGemini(prompt, apiKey) {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+    const MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${apiKey}`;
     const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -155,8 +161,7 @@ async function callGemini(prompt, apiKey) {
             contents: [{ parts: [{ text: prompt }] }],
             generationConfig: {
                 temperature: 0.3,
-                maxOutputTokens: 200,
-                responseMimeType: 'application/json',
+                maxOutputTokens: 8192,
             },
         }),
     });
@@ -169,6 +174,26 @@ async function callGemini(prompt, apiKey) {
     if (!text)
         throw new Error('Empty response from Gemini');
     return text.trim();
+}
+function cleanAndParseJSON(text) {
+    try {
+        return JSON.parse(text);
+    }
+    catch (e) {
+        const firstOpen = text.indexOf('{');
+        const lastClose = text.lastIndexOf('}');
+        if (firstOpen !== -1 && lastClose !== -1 && lastClose > firstOpen) {
+            const jsonCandidate = text.substring(firstOpen, lastClose + 1);
+            try {
+                return JSON.parse(jsonCandidate);
+            }
+            catch (innerError) {
+                console.warn('[AI-LLM] Failed to parse extracted JSON candidate:', jsonCandidate);
+            }
+        }
+        console.error('[AI-LLM] JSON Parse Failure. Full Text received:', text);
+        throw new Error(`Failed to parse JSON from response. First 100 chars: ${text.substring(0, 100)}...`);
+    }
 }
 async function llmPickMove(gameState) {
     const apiKey = process.env.GEMINI_API_KEY || '';
@@ -193,7 +218,7 @@ async function llmPickMove(gameState) {
         console.log(`[AI-LLM] Calling Gemini for game ${gameState.id} with ${legalMoves.length} legal moves.`);
         const rawResponse = await callGemini(prompt, apiKey);
         console.log(`[AI-LLM] Gemini response: ${rawResponse}`);
-        const parsed = JSON.parse(rawResponse);
+        const parsed = cleanAndParseJSON(rawResponse);
         const moveIndex = parsed.move;
         if (typeof moveIndex !== 'number' || moveIndex < 0 || moveIndex >= legalMoves.length) {
             console.warn(`[AI-LLM] Invalid move index ${moveIndex}, falling back to rule-based.`);
