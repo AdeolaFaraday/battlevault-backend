@@ -35,7 +35,7 @@ interface LegalMove {
 
 // ─── Prompt Construction ─────────────────────────────────────────
 
-function buildGameStateDescription(state: LudoGameState, player: LudoPlayer): string {
+export function buildGameStateDescription(state: LudoGameState, player: LudoPlayer): string {
     const playerColors = player.tokens || [];
     const opponentColors = Object.keys(state.tokens).filter((c) => !playerColors.includes(c));
 
@@ -75,7 +75,7 @@ function buildGameStateDescription(state: LudoGameState, player: LudoPlayer): st
     ].join('\n');
 }
 
-function buildLegalMovesDescription(legalMoves: LegalMove[]): string {
+export function buildLegalMovesDescription(legalMoves: LegalMove[]): string {
     if (legalMoves.length === 0) return 'No legal moves available.';
 
     const lines = legalMoves.map((m) => {
@@ -91,7 +91,7 @@ function buildLegalMovesDescription(legalMoves: LegalMove[]): string {
     return lines.join('\n');
 }
 
-function buildPrompt(stateDesc: string, movesDesc: string, moveCount: number): string {
+export function buildPrompt(stateDesc: string, movesDesc: string, moveCount: number): string {
     return `You are an expert Ludo game AI. Analyze the board state and pick the BEST move.
 
 GAME STATE:
@@ -109,8 +109,9 @@ LUDO STRATEGY TIPS:
 - Consider risk vs reward: advancing far-ahead tokens on main board is risky
 
 INSTRUCTIONS:
-Pick the single best move number (0 to ${moveCount - 1}). 
-Respond with ONLY a JSON object in this exact format, no other text:
+Pick the single best move number (0 to ${moveCount - 1}).
+Respond with ONLY a valid JSON object. Do not include any markdown formatting, code blocks, or conversational text.
+Format:
 {"move": <number>, "reasoning": "<brief explanation>"}`;
 }
 
@@ -126,7 +127,7 @@ Respond with ONLY a JSON object in this exact format, no other text:
  * The result is a flat list of options the LLM can choose from,
  * each enriched with context (would it capture? finish? activate?).
  */
-function generateLegalMoves(state: LudoGameState, player: LudoPlayer): LegalMove[] {
+export function generateLegalMoves(state: LudoGameState, player: LudoPlayer): LegalMove[] {
     // Step 1: Get the colors this player controls
     // e.g., Player 1 controls ['red', 'green'] — each color has 4 tokens
     const playerColors = player.tokens || [];
@@ -159,6 +160,7 @@ function generateLegalMoves(state: LudoGameState, player: LudoPlayer): LegalMove
             // Step 4: For each movable token, calculate what WOULD happen
             for (const token of movable) {
                 // Is this token currently sitting at home (inactive)?
+                // If so, using a 6 on it means "activate" — bring it onto the board
                 // If so, using a 6 on it means "activate" — bring it onto the board
                 const wouldActivate = !token.active;
 
@@ -242,7 +244,8 @@ function checkCapture(
 // ─── Gemini API Call ─────────────────────────────────────────────
 
 async function callGemini(prompt: string, apiKey: string): Promise<string> {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+    const MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${apiKey}`;
 
     const response = await fetch(url, {
         method: 'POST',
@@ -251,8 +254,8 @@ async function callGemini(prompt: string, apiKey: string): Promise<string> {
             contents: [{ parts: [{ text: prompt }] }],
             generationConfig: {
                 temperature: 0.3,
-                maxOutputTokens: 200,
-                responseMimeType: 'application/json',
+                maxOutputTokens: 8192,
+                // responseMimeType: 'application/json',
             },
         }),
     });
@@ -266,6 +269,36 @@ async function callGemini(prompt: string, apiKey: string): Promise<string> {
     const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!text) throw new Error('Empty response from Gemini');
     return text.trim();
+}
+
+// ─── JSON Parsing Helper ─────────────────────────────────────────
+
+/**
+ * Robustly parses JSON from LLM response.
+ * Handles "thinking" blocks, markdown code fences, and conversational text.
+ */
+function cleanAndParseJSON(text: string): any {
+    try {
+        // 1. Try direct parsing first
+        return JSON.parse(text);
+    } catch (e) {
+        // 2. Find the first '{' and last '}'
+        const firstOpen = text.indexOf('{');
+        const lastClose = text.lastIndexOf('}');
+
+        if (firstOpen !== -1 && lastClose !== -1 && lastClose > firstOpen) {
+            const jsonCandidate = text.substring(firstOpen, lastClose + 1);
+            try {
+                return JSON.parse(jsonCandidate);
+            } catch (innerError) {
+                console.warn('[AI-LLM] Failed to parse extracted JSON candidate:', jsonCandidate);
+            }
+        }
+
+        // Log the full text for debugging if parsing fails
+        console.error('[AI-LLM] JSON Parse Failure. Full Text received:', text);
+        throw new Error(`Failed to parse JSON from response. First 100 chars: ${text.substring(0, 100)}...`);
+    }
 }
 
 // ─── LLM Pick Move ──────────────────────────────────────────────
@@ -303,8 +336,8 @@ export async function llmPickMove(gameState: LudoGameState): Promise<AIMove | nu
         const rawResponse = await callGemini(prompt, apiKey);
         console.log(`[AI-LLM] Gemini response: ${rawResponse}`);
 
-        // Parse the JSON response
-        const parsed = JSON.parse(rawResponse);
+        // Parse the JSON response securely
+        const parsed = cleanAndParseJSON(rawResponse);
         const moveIndex = parsed.move;
 
         if (typeof moveIndex !== 'number' || moveIndex < 0 || moveIndex >= legalMoves.length) {
