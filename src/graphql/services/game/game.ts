@@ -194,6 +194,47 @@ export default class GameService {
         }
     }
 
+    static async createAIGame(name: string) {
+        try {
+            const aiId = `ai-${Math.random().toString(36).substring(2, 9)}`;
+            const aiName = "BattleBot-Alpha 🤖";
+
+            const aiPlayer = {
+                id: aiId,
+                name: aiName,
+                color: LudoColor.RED,
+                tokens: [LudoColor.RED, LudoColor.GREEN],
+                capturedCount: 0,
+                finishedCount: 0,
+                slot: 0
+            };
+
+            const initialData = {
+                name: name,
+                type: 'FREE',
+                status: LudoStatus.WAITING,
+                tokens: INITIAL_TOKENS,
+                diceValue: [],
+                usedDiceValues: [],
+                activeDiceConfig: [],
+                players: [aiPlayer],
+                currentTurn: "",
+                isRolling: false,
+                startDate: new Date(),
+            };
+
+            const game = new Game(initialData);
+            const savedGame = await game.save();
+
+            const realtimeProvider = RealtimeProviderFactory.getProvider();
+            await realtimeProvider.createGameDocument(savedGame.id, initialData);
+
+            return new ClientResponse(201, true, "AI game created successfully", this.formatGameState(savedGame));
+        } catch (error: any) {
+            return new ClientResponse(500, false, error.message);
+        }
+    }
+
     static async joinGame(gameId: string, userId: string | undefined, name: string, context: any) {
         const user = await context.getUserLocal();
         let finalUserId = userId;
