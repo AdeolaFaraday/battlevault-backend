@@ -10,28 +10,53 @@ const aiEngine_1 = require("./aiEngine");
 function buildGameStateDescription(state, player) {
     const playerColors = player.tokens || [];
     const opponentColors = Object.keys(state.tokens).filter((c) => !playerColors.includes(c));
+    const SAFE_ZONE_ENTRIES = {
+        red: 53,
+        green: 14,
+        yellow: 27,
+        blue: 40,
+    };
     const aiTokenDescriptions = playerColors.flatMap((color) => {
         const tokens = state.tokens[color] || [];
+        const entryPos = SAFE_ZONE_ENTRIES[color];
         return tokens.map((t) => {
             if (t.isFinished)
                 return `  ${color} #${t.sn}: FINISHED`;
             if (!t.active)
                 return `  ${color} #${t.sn}: AT HOME (inactive)`;
-            const distToFinish = t.isSafePath
-                ? ludoLogic_1.HOME_POSITIONS[color] - t.position
-                : '~unknown (on main path)';
-            return `  ${color} #${t.sn}: position ${t.position}, ${t.isSafePath ? 'SAFE PATH' : 'main board'}, distance to finish: ${distToFinish}`;
+            let distToFinish;
+            if (t.isSafePath) {
+                distToFinish = ludoLogic_1.HOME_POSITIONS[color] - t.position;
+            }
+            else {
+                let stepsToEntry;
+                if (color === 'red') {
+                    stepsToEntry = entryPos - t.position;
+                }
+                else {
+                    if (t.position < entryPos) {
+                        stepsToEntry = entryPos - t.position;
+                    }
+                    else {
+                        stepsToEntry = (52 - t.position) + entryPos;
+                    }
+                }
+                const stepsInHomeStretch = ludoLogic_1.HOME_POSITIONS[color] - entryPos;
+                distToFinish = stepsToEntry + stepsInHomeStretch;
+            }
+            return `  ${color} #${t.sn}: position ${t.position}, ${t.isSafePath ? 'SAFE PATH (HIDDEN)' : 'main board (EXPOSED)'}, dist to finish: ${distToFinish}${!t.isSafePath ? `, gate at: ${entryPos}` : ''}`;
         });
     });
     const opponentDescriptions = opponentColors.flatMap((color) => {
         const tokens = state.tokens[color] || [];
         return tokens
             .filter((t) => t.active && !t.isFinished)
-            .map((t) => `  ${color} #${t.sn}: position ${t.position}${t.isSafePath ? ' (SAFE PATH)' : ''}`);
+            .map((t) => `  ${color} #${t.sn}: position ${t.position}${t.isSafePath ? ' (on their SAFE PATH)' : ''}`);
     });
     return [
         `You are playing Ludo as player "${player.name}" (ID: ${player.id}).`,
         `Your colors: ${playerColors.join(', ')}`,
+        `Board scale: positions 1 to 52 (circular, 52 wraps back to 1).`,
         ``,
         `YOUR TOKENS:`,
         ...aiTokenDescriptions,
@@ -57,7 +82,7 @@ function buildLegalMovesDescription(legalMoves) {
         if (m.wouldFinish)
             parts.push('🏠 FINISHES token!');
         if (m.willBeSafe && !m.wouldActivate)
-            parts.push('🛡️ enters safe path');
+            parts.push('🛡️ enters safe path (HIDDEN)');
         return parts.join(' ');
     });
     return lines.join('\n');
@@ -71,13 +96,20 @@ ${stateDesc}
 AVAILABLE MOVES:
 ${movesDesc}
 
-LUDO STRATEGY TIPS:
-- Capturing opponent tokens sends them back home — very powerful
-- Finishing tokens (reaching home) is permanent progress
-- Activating new tokens when you roll a 6 gives you more options
-- Moving tokens on the safe path is risk-free
-- Tokens on the main board can be captured by opponents
-- Consider risk vs reward: advancing far-ahead tokens on main board is risky
+STRATEGIC CONTEXT:
+1. CIRCULAR BOARD: Position 52 wraps to 1. If you are at 51 and move 3, you land on 2. 
+2. EXPOSED TOKENS: Any token on "main board" (positions 1-52) can be captured by any opponent. 
+3. SAFE PATH: Tokens on "SAFE PATH" are permanent and hidden from opponents. No captures can happen here.
+4. NO STARS: THERE ARE NO SAFE SPOTS ON THE MAIN BOARD. Every spot is dangerous.
+5. WRAP-AROUND RISK: An opponent at 50 is physically 4 steps behind a token at 2. 
+6. HOME THREAT: Landing on an opponent's start position is VERY RISKY if they have inactive tokens at home (they can activate and hit you).
+
+TACTICAL PRIORITIES:
+- CAPTURE opponents whenever possible (highest priority).
+- FINISH tokens to secure points.
+- Move tokens into the SAFE PATH to hide them from danger.
+- Activate new tokens with 6s to increase board presence.
+- Avoid landing in range of opponents (1-6 steps behind you, including wrap-around).
 
 INSTRUCTIONS:
 Pick the single best move number (0 to ${moveCount - 1}).
