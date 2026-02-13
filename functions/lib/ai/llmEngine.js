@@ -10,24 +10,48 @@ const aiEngine_1 = require("./aiEngine");
 function buildGameStateDescription(state, player) {
     const playerColors = player.tokens || [];
     const opponentColors = Object.keys(state.tokens).filter((c) => !playerColors.includes(c));
+    const SAFE_ZONE_ENTRIES = {
+        red: 53,
+        green: 14,
+        yellow: 27,
+        blue: 40,
+    };
     const aiTokenDescriptions = playerColors.flatMap((color) => {
         const tokens = state.tokens[color] || [];
+        const entryPos = SAFE_ZONE_ENTRIES[color];
         return tokens.map((t) => {
             if (t.isFinished)
                 return `  ${color} #${t.sn}: FINISHED`;
             if (!t.active)
                 return `  ${color} #${t.sn}: AT HOME (inactive)`;
-            const distToFinish = t.isSafePath
-                ? ludoLogic_1.HOME_POSITIONS[color] - t.position
-                : '~unknown (on main path)';
-            return `  ${color} #${t.sn}: position ${t.position}, ${t.isSafePath ? 'SAFE PATH' : 'main board'}, distance to finish: ${distToFinish}`;
+            let distToFinish;
+            if (t.isSafePath) {
+                distToFinish = ludoLogic_1.HOME_POSITIONS[color] - t.position;
+            }
+            else {
+                let stepsToEntry;
+                if (color === 'red') {
+                    stepsToEntry = entryPos - t.position;
+                }
+                else {
+                    if (t.position < entryPos) {
+                        stepsToEntry = entryPos - t.position;
+                    }
+                    else {
+                        stepsToEntry = (52 - t.position) + entryPos;
+                    }
+                }
+                const stepsInHomeStretch = ludoLogic_1.HOME_POSITIONS[color] - entryPos;
+                distToFinish = stepsToEntry + stepsInHomeStretch;
+            }
+            return `  ${color} #${t.sn}: position ${t.position}, ${t.isSafePath ? 'SAFE PATH (HIDDEN FROM OPPONENTS)' : 'main board (EXPOSED)'}, distance to finish: ${distToFinish}${!t.isSafePath ? `, entry to safe path at: ${entryPos}` : ''}`;
         });
     });
     const opponentDescriptions = opponentColors.flatMap((color) => {
         const tokens = state.tokens[color] || [];
         return tokens
             .filter((t) => t.active && !t.isFinished)
-            .map((t) => `  ${color} #${t.sn}: position ${t.position}${t.isSafePath ? ' (SAFE PATH)' : ''}`);
+            .map((t) => `  ${color} #${t.sn}: position ${t.position}${t.isSafePath ? ' (on their SAFE PATH - cannot be captured)' : ''}`);
     });
     return [
         `You are playing Ludo as player "${player.name}" (ID: ${player.id}).`,
@@ -71,13 +95,17 @@ ${stateDesc}
 AVAILABLE MOVES:
 ${movesDesc}
 
-LUDO STRATEGY TIPS:
-- Capturing opponent tokens sends them back home — very powerful
-- Finishing tokens (reaching home) is permanent progress
-- Activating new tokens when you roll a 6 gives you more options
-- Moving tokens on the safe path is risk-free
-- Tokens on the main board can be captured by opponents
-- Consider risk vs reward: advancing far-ahead tokens on main board is risky
+CRITICAL RULES & STRATEGY:
+- THERE ARE NO SAFE SPOTS (STARS) ON THE MAIN BOARD. Every position from 1 to 52 is dangerous.
+- A token is ONLY safe once it enters its "SAFE PATH" (Home Stretch). 
+- Opponents CANNOT capture your tokens if they are on your SAFE PATH.
+- You CANNOT capture opponent tokens if they are on their SAFE PATH.
+- Capturing opponent tokens sends them back home — this is the HIGHEST priority if it doesn't put you at extreme risk.
+- Finishing tokens (reaching home) is permanent progress.
+- Activating new tokens when you roll a 6 is usually better than moving a token that is already safe.
+- Moving tokens on the SAFE PATH is 100% risk-free.
+- Tokens on the main board (positions 1-52) can be captured by any opponent that lands on the same position.
+- Risk Assessment: If you move a token on the main board, check if an opponent is behind it and could roll to reach its new position.
 
 INSTRUCTIONS:
 Pick the single best move number (0 to ${moveCount - 1}).

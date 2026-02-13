@@ -39,16 +39,47 @@ export function buildGameStateDescription(state: LudoGameState, player: LudoPlay
     const playerColors = player.tokens || [];
     const opponentColors = Object.keys(state.tokens).filter((c) => !playerColors.includes(c));
 
+    // Define safe zone entry positions for each color
+    const SAFE_ZONE_ENTRIES: { [key: string]: number } = {
+        red: 53,
+        green: 14,
+        yellow: 27,
+        blue: 40,
+    };
+
     // Describe AI's tokens
     const aiTokenDescriptions = playerColors.flatMap((color) => {
         const tokens = state.tokens[color] || [];
+        const entryPos = SAFE_ZONE_ENTRIES[color];
+
         return tokens.map((t) => {
             if (t.isFinished) return `  ${color} #${t.sn}: FINISHED`;
             if (!t.active) return `  ${color} #${t.sn}: AT HOME (inactive)`;
-            const distToFinish = t.isSafePath
-                ? HOME_POSITIONS[color] - t.position
-                : '~unknown (on main path)';
-            return `  ${color} #${t.sn}: position ${t.position}, ${t.isSafePath ? 'SAFE PATH' : 'main board'}, distance to finish: ${distToFinish}`;
+
+            let distToFinish: number;
+            if (t.isSafePath) {
+                distToFinish = HOME_POSITIONS[color] - t.position;
+            } else {
+                // Calculation for main board: steps to entry + steps in home stretch
+                // Example: green token at pos 10, entry at 14, home at 19.
+                // Steps to entry = 14 - 10 = 4. Steps from entry to home = 19 - 14 = 5. Total = 9.
+                let stepsToEntry: number;
+                if (color === 'red') {
+                    stepsToEntry = entryPos - t.position;
+                } else {
+                    // For colors that wrap around (green, yellow, blue)
+                    // if current pos > entry pos, they must wrap around 52
+                    if (t.position < entryPos) {
+                        stepsToEntry = entryPos - t.position;
+                    } else {
+                        stepsToEntry = (52 - t.position) + entryPos;
+                    }
+                }
+                const stepsInHomeStretch = HOME_POSITIONS[color] - entryPos;
+                distToFinish = stepsToEntry + stepsInHomeStretch;
+            }
+
+            return `  ${color} #${t.sn}: position ${t.position}, ${t.isSafePath ? 'SAFE PATH (HIDDEN FROM OPPONENTS)' : 'main board (EXPOSED)'}, distance to finish: ${distToFinish}${!t.isSafePath ? `, entry to safe path at: ${entryPos}` : ''}`;
         });
     });
 
@@ -57,7 +88,7 @@ export function buildGameStateDescription(state: LudoGameState, player: LudoPlay
         const tokens = state.tokens[color] || [];
         return tokens
             .filter((t) => t.active && !t.isFinished)
-            .map((t) => `  ${color} #${t.sn}: position ${t.position}${t.isSafePath ? ' (SAFE PATH)' : ''}`);
+            .map((t) => `  ${color} #${t.sn}: position ${t.position}${t.isSafePath ? ' (on their SAFE PATH - cannot be captured)' : ''}`);
     });
 
     return [
@@ -100,13 +131,17 @@ ${stateDesc}
 AVAILABLE MOVES:
 ${movesDesc}
 
-LUDO STRATEGY TIPS:
-- Capturing opponent tokens sends them back home — very powerful
-- Finishing tokens (reaching home) is permanent progress
-- Activating new tokens when you roll a 6 gives you more options
-- Moving tokens on the safe path is risk-free
-- Tokens on the main board can be captured by opponents
-- Consider risk vs reward: advancing far-ahead tokens on main board is risky
+CRITICAL RULES & STRATEGY:
+- THERE ARE NO SAFE SPOTS (STARS) ON THE MAIN BOARD. Every position from 1 to 52 is dangerous.
+- A token is ONLY safe once it enters its "SAFE PATH" (Home Stretch). 
+- Opponents CANNOT capture your tokens if they are on your SAFE PATH.
+- You CANNOT capture opponent tokens if they are on their SAFE PATH.
+- Capturing opponent tokens sends them back home — this is the HIGHEST priority if it doesn't put you at extreme risk.
+- Finishing tokens (reaching home) is permanent progress.
+- Activating new tokens when you roll a 6 is usually better than moving a token that is already safe.
+- Moving tokens on the SAFE PATH is 100% risk-free.
+- Tokens on the main board (positions 1-52) can be captured by any opponent that lands on the same position.
+- Risk Assessment: If you move a token on the main board, check if an opponent is behind it and could roll to reach its new position.
 
 INSTRUCTIONS:
 Pick the single best move number (0 to ${moveCount - 1}).

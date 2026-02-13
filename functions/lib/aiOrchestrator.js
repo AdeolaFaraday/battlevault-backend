@@ -91,7 +91,9 @@ exports.aiOrchestrator = functions.firestore
             console.log(`[AI] Failed to acquire lock for game ${gameId}, another instance may be handling.`);
             return null;
         }
-        await sleep(AI_DELAY_MS);
+        const engine = (0, aiStrategy_1.getEngineType)();
+        const delay = engine === 'llm' ? 200 : AI_DELAY_MS;
+        await sleep(delay);
         const freshDoc = await gameRef.get();
         if (!freshDoc.exists) {
             await gameRef.update({ aiProcessing: false });
