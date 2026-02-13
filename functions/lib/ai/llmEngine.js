@@ -44,18 +44,19 @@ function buildGameStateDescription(state, player) {
                 const stepsInHomeStretch = ludoLogic_1.HOME_POSITIONS[color] - entryPos;
                 distToFinish = stepsToEntry + stepsInHomeStretch;
             }
-            return `  ${color} #${t.sn}: position ${t.position}, ${t.isSafePath ? 'SAFE PATH (HIDDEN FROM OPPONENTS)' : 'main board (EXPOSED)'}, distance to finish: ${distToFinish}${!t.isSafePath ? `, entry to safe path at: ${entryPos}` : ''}`;
+            return `  ${color} #${t.sn}: position ${t.position}, ${t.isSafePath ? 'SAFE PATH (HIDDEN)' : 'main board (EXPOSED)'}, dist to finish: ${distToFinish}${!t.isSafePath ? `, gate at: ${entryPos}` : ''}`;
         });
     });
     const opponentDescriptions = opponentColors.flatMap((color) => {
         const tokens = state.tokens[color] || [];
         return tokens
             .filter((t) => t.active && !t.isFinished)
-            .map((t) => `  ${color} #${t.sn}: position ${t.position}${t.isSafePath ? ' (on their SAFE PATH - cannot be captured)' : ''}`);
+            .map((t) => `  ${color} #${t.sn}: position ${t.position}${t.isSafePath ? ' (on their SAFE PATH)' : ''}`);
     });
     return [
         `You are playing Ludo as player "${player.name}" (ID: ${player.id}).`,
         `Your colors: ${playerColors.join(', ')}`,
+        `Board scale: positions 1 to 52 (circular, 52 wraps back to 1).`,
         ``,
         `YOUR TOKENS:`,
         ...aiTokenDescriptions,
@@ -81,7 +82,7 @@ function buildLegalMovesDescription(legalMoves) {
         if (m.wouldFinish)
             parts.push('🏠 FINISHES token!');
         if (m.willBeSafe && !m.wouldActivate)
-            parts.push('🛡️ enters safe path');
+            parts.push('🛡️ enters safe path (HIDDEN)');
         return parts.join(' ');
     });
     return lines.join('\n');
@@ -95,17 +96,20 @@ ${stateDesc}
 AVAILABLE MOVES:
 ${movesDesc}
 
-CRITICAL RULES & STRATEGY:
-- THERE ARE NO SAFE SPOTS (STARS) ON THE MAIN BOARD. Every position from 1 to 52 is dangerous.
-- A token is ONLY safe once it enters its "SAFE PATH" (Home Stretch). 
-- Opponents CANNOT capture your tokens if they are on your SAFE PATH.
-- You CANNOT capture opponent tokens if they are on their SAFE PATH.
-- Capturing opponent tokens sends them back home — this is the HIGHEST priority if it doesn't put you at extreme risk.
-- Finishing tokens (reaching home) is permanent progress.
-- Activating new tokens when you roll a 6 is usually better than moving a token that is already safe.
-- Moving tokens on the SAFE PATH is 100% risk-free.
-- Tokens on the main board (positions 1-52) can be captured by any opponent that lands on the same position.
-- Risk Assessment: If you move a token on the main board, check if an opponent is behind it and could roll to reach its new position.
+STRATEGIC CONTEXT:
+1. CIRCULAR BOARD: Position 52 wraps to 1. If you are at 51 and move 3, you land on 2. 
+2. EXPOSED TOKENS: Any token on "main board" (positions 1-52) can be captured by any opponent. 
+3. SAFE PATH: Tokens on "SAFE PATH" are permanent and hidden from opponents. No captures can happen here.
+4. NO STARS: THERE ARE NO SAFE SPOTS ON THE MAIN BOARD. Every spot is dangerous.
+5. WRAP-AROUND RISK: An opponent at 50 is physically 4 steps behind a token at 2. 
+6. HOME THREAT: Landing on an opponent's start position is VERY RISKY if they have inactive tokens at home (they can activate and hit you).
+
+TACTICAL PRIORITIES:
+- CAPTURE opponents whenever possible (highest priority).
+- FINISH tokens to secure points.
+- Move tokens into the SAFE PATH to hide them from danger.
+- Activate new tokens with 6s to increase board presence.
+- Avoid landing in range of opponents (1-6 steps behind you, including wrap-around).
 
 INSTRUCTIONS:
 Pick the single best move number (0 to ${moveCount - 1}).

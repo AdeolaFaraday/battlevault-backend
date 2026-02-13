@@ -15,7 +15,7 @@ function getEngineType() {
     return 'rules';
 }
 function getDifficulty() {
-    const diff = (process.env.AI_DIFFICULTY || 'medium').toLowerCase();
+    const diff = (process.env.AI_DIFFICULTY || 'hard').toLowerCase();
     if (['easy', 'medium', 'hard'].includes(diff))
         return diff;
     return 'medium';
