@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Match Warning - BattleVault</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #0f111a;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            color: #ffffff;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .wrapper {
+            width: 100%;
+            table-layout: fixed;
+            background-color: #0f111a;
+            padding-bottom: 40px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #161b22;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #2f343e;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        .header {
+            background-color: #000000;
+            padding: 50px 20px;
+            text-align: center;
+        }
+
+        .logo {
+            width: 80px;
+            height: auto;
+            margin-bottom: 10px;
+        }
+
+        .content {
+            padding: 40px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 800;
+            margin: 0 0 20px;
+            letter-spacing: -0.5px;
+            text-transform: uppercase;
+            color: #ffffff;
+        }
+
+        p {
+            font-size: 16px;
+            line-height: 1.6;
+            margin: 0 0 30px;
+            color: #c9d1d9;
+        }
+
+        .warning-badge {
+            display: inline-block;
+            background-color: #ff4d4f;
+            color: #ffffff;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 14px;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+        }
+
+        .btn-container {
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            display: inline-block;
+            background: #F9A602;
+            color: #000000 !important;
+            padding: 16px 36px;
+            font-size: 18px;
+            font-weight: 700;
+            text-decoration: none;
+            border-radius: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 14px rgba(249, 166, 2, 0.4);
+            transition: transform 0.2s ease;
+        }
+
+        .footer {
+            padding: 30px 40px;
+            background-color: #0d1117;
+            text-align: center;
+            border-top: 1px solid #2f343e;
+        }
+
+        .footer-text {
+            font-size: 12px;
+            color: #8b949e;
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        .divider {
+            height: 1px;
+            background: #2f343e;
+            margin: 20px 0;
+            border: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrapper">
+        <div style="height: 40px;"></div>
+        <div class="container">
+            <div class="header">
+                <img src="https://firebasestorage.googleapis.com/v0/b/battlevault.firebasestorage.app/o/uploads%2Fcommon%2Fbattlevault-logo-white.png?alt=media&token=112e1614-1aed-461e-9768-113e4680103e"
+                    alt="BattleVault" class="logo">
+            </div>
+
+            <div class="content">
+                <div class="warning-badge">Warning #{{warningNumber}}</div>
+                <h1>The Arena is Waiting, Champion.</h1>
+                <p>
+                    Your match in <strong>{{tournamentTitle}}</strong> ({{stageName}}) is scheduled to start.
+                    If you don't join the game soon, you risk being disqualified from the arena.
+                </p>
+
+                <div class="btn-container">
+                    <a href="{{gameLink}}" class="btn">JOIN THE BATTLE</a>
+                </div>
+
+                <p style="font-size: 14px; color: #8b949e;">
+                    Don't let your glory fade. Reclaim your vault and prove your worth.
+                </p>
+
+                <div class="divider"></div>
+            </div>
+
+            <div class="footer">
+                <p class="footer-text">
+                    You received this because you are a registered participant in this tournament.<br>
+                    Need help? <a href="https://battlevault.app/contact"
+                        style="color: #4169E1; text-decoration: none;">Contact Support</a>.
+                </p>
+                <p class="footer-text" style="margin-top: 10px;">
+                    &copy; 2026 BattleVault. All rights reserved.
+                </p>
+            </div>
+        </div>
+        <div style="height: 40px;"></div>
+    </div>
+</body>
+
+</html>
