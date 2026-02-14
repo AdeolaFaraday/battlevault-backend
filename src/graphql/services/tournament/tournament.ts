@@ -59,7 +59,8 @@ export default class TournamentService {
                     name: stageName,
                     index: round,
                     gameIds: [],
-                    status: round === 0 ? 'ACTIVE' : 'PENDING'
+                    status: round === 0 ? 'ACTIVE' : 'PENDING',
+                    scheduledDate: round === 0 ? new Date() : undefined
                 });
 
                 // We'll save the stage after collecting game IDs
@@ -297,6 +298,7 @@ export default class TournamentService {
                 if (nextStage) {
                     // 3. Activate next stage
                     nextStage.status = 'ACTIVE';
+                    nextStage.scheduledDate = new Date(Date.now() + 24 * 60 * 60 * 1000); // Start notifying in 24 hours
                     await nextStage.save();
 
                     // Update Tournament's currentStage

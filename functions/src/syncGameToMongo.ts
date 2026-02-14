@@ -136,7 +136,7 @@ export const syncGameToMongo = functions.firestore
                             const mongoUpdates: any = { players };
                             const activePlayers = players.filter((p: any) => p.id);
                             if (activePlayers.length === 2 && (nextMongoGame as any).status === 'waiting') {
-                                mongoUpdates.status = 'playingDice';
+                                // mongoUpdates.status = 'playingDice';
                                 mongoUpdates.currentTurn = activePlayers[0].id;
                             }
 

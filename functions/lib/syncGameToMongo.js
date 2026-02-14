@@ -119,7 +119,6 @@ exports.syncGameToMongo = functions.firestore
                         const mongoUpdates = { players };
                         const activePlayers = players.filter((p) => p.id);
                         if (activePlayers.length === 2 && nextMongoGame.status === 'waiting') {
-                            mongoUpdates.status = 'playingDice';
                             mongoUpdates.currentTurn = activePlayers[0].id;
                         }
                         await Game.findByIdAndUpdate(newData.nextGameId, { $set: mongoUpdates });

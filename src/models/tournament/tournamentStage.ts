@@ -6,6 +6,8 @@ export interface TournamentStageDoc extends Document {
     index: number;
     gameIds: string[];
     status: 'PENDING' | 'ACTIVE' | 'COMPLETED';
+    scheduledDate?: Date;
+    notificationCount?: number;
 }
 
 const tournamentStageSchema = new Schema(
@@ -18,7 +20,9 @@ const tournamentStageSchema = new Schema(
             type: String,
             enum: ['PENDING', 'ACTIVE', 'COMPLETED'],
             default: 'PENDING'
-        }
+        },
+        scheduledDate: { type: Date },
+        notificationCount: { type: Number, default: 0 }
     },
     { timestamps: true }
 );
