@@ -32,7 +32,7 @@ type UserStats {
   bestStreak: Int
 }
 
-union ResponseData = User | LudoGameState | Tournament | TournamentList | GameList | LeaderboardResult | UserStats | AuthPayload | TournamentBracket | TournamentRegistration | Wallet | Bank | BankList | PaystackBankList | AccountVerification | UploadedFile | UploadedFiles
+union ResponseData = User | LudoGameState | Tournament | TournamentList | GameList | LeaderboardResult | UserStats | AuthPayload | TournamentBracket | TournamentRegistration | Wallet | Bank | BankList | PaystackBankList | AccountVerification | UploadedFile | UploadedFiles | DailyBlitz
 
 type Response {
   statusCode: Int!

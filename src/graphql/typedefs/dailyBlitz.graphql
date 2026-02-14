@@ -1,0 +1,24 @@
+type NextReward {
+  description: String!
+  amount: Float!
+  target: Int!
+  current: Int!
+  percentage: Float!
+}
+
+type DailyBlitz {
+  id: ID!
+  userId: ID!
+  date: String!
+  loginRewardClaimed: Boolean!
+  winsToday: Int!
+  win1RewardClaimed: Boolean!
+  win3RewardClaimed: Boolean!
+  nextReward: NextReward
+  createdAt: String
+  updatedAt: String
+}
+
+extend type Query {
+  getDailyBlitz: Response!
+}

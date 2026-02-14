@@ -6,3 +6,4 @@ admin.initializeApp();
 
 export { syncGameToMongo } from './syncGameToMongo';
 export { aiOrchestrator } from './aiOrchestrator';
+export { dailyBlitzWinTracker } from './dailyBlitz';

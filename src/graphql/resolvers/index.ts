@@ -6,6 +6,7 @@ import { gameQueries, gameMutations } from './game';
 import { tournamentQueries, tournamentMutations } from './tournament';
 import { walletMutations, walletQueries } from './wallet';
 import { uploadMutations } from './upload';
+import { dailyBlitzQueries } from './dailyBlitz';
 
 
 const resolvers = {
@@ -24,6 +25,7 @@ const resolvers = {
             if (obj.stages) return 'TournamentBracket';
             if (obj.isRegistered !== undefined) return 'TournamentRegistration';
             if (obj.withdrawable !== undefined) return 'Wallet';
+            if (obj.date !== undefined && obj.winsToday !== undefined) return 'DailyBlitz';
             if (obj.bankName !== undefined && obj.accountNumber !== undefined && obj.recipientCode !== undefined) return 'Bank';
             if (obj.isLocal) return 'BankList';
             if (obj.banks !== undefined && Array.isArray(obj.banks)) return 'PaystackBankList';
@@ -40,6 +42,7 @@ const resolvers = {
         ...gameQueries,
         ...tournamentQueries,
         ...walletQueries,
+        ...dailyBlitzQueries,
     },
     Mutation: {
         ...userMutations,

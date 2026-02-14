@@ -17,6 +17,8 @@ import Transaction from "./models/transaction";
 import GoogleAuthService from "./services/auth/googleAuth";
 import { setCookie } from "./graphql/services/auth/functions/authenticate";
 import uploadRoutes from "./routes/upload";
+import DailyBlitzService from "./services/dailyBlitz";
+
 
 
 const App = async () => {
@@ -183,7 +185,12 @@ const App = async () => {
             // 4. Set cookie
             // setCookie(token, user, res);
 
-            // 5. Redirect to frontend with token
+            // 5. Check Daily Blitz Login Reward (Fire and Forget)
+            if (user && user.id) {
+                DailyBlitzService.checkLoginReward(user.id).catch(e => console.error("DailyBlitz Login Check Failed:", e));
+            }
+
+            // 6. Redirect to frontend with token
             return res.redirect(
                 `${process.env.CLIENT_URL}/auth/callback?token=${token}`
             );
