@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.isAIPlayer = void 0;
 exports.getEngineType = getEngineType;
+exports.getDifficulty = getDifficulty;
 exports.pickMoveStrategy = pickMoveStrategy;
 const aiEngine_1 = require("./aiEngine");
 const llmEngine_1 = require("./llmEngine");
@@ -13,15 +14,22 @@ function getEngineType() {
         return 'llm';
     return 'rules';
 }
+function getDifficulty() {
+    const diff = (process.env.AI_DIFFICULTY || 'hard').toLowerCase();
+    if (['easy', 'medium', 'hard'].includes(diff))
+        return diff;
+    return 'hard';
+}
 async function pickMoveStrategy(gameState) {
     const engine = getEngineType();
-    console.log(`[AI-Strategy] Using "${engine}" engine for game ${gameState.id}`);
+    const difficulty = getDifficulty();
+    console.log(`[AI-Strategy] Using "${engine}" engine (${difficulty}) for game ${gameState.id}`);
     switch (engine) {
         case 'llm':
             return (0, llmEngine_1.llmPickMove)(gameState);
         case 'rules':
         default:
-            return (0, aiEngine_1.pickMove)(gameState);
+            return (0, aiEngine_1.pickMove)(gameState, difficulty);
     }
 }
 //# sourceMappingURL=aiStrategy.js.map

@@ -4,13 +4,13 @@
  * Switch between rule-based and LLM-powered AI engines
  * using a single configuration variable.
  *
- * Config: Set `AI_ENGINE` environment variable
- *   - "llm"   → Use Gemini LLM (requires GEMINI_API_KEY)
- *   - "rules"  → Use rule-based priority engine (default)
+ * Config:
+ *   - AI_ENGINE: "llm" or "rules" (default)
+ *   - AI_DIFFICULTY: "easy", "medium" (default), or "hard"
  */
 
 import { LudoGameState } from './ludoLogic';
-import { AIMove, pickMove as ruleBasedPickMove } from './aiEngine';
+import { AIMove, AIDifficulty, pickMove as ruleBasedPickMove } from './aiEngine';
 import { llmPickMove } from './llmEngine';
 
 // Re-export for convenience
@@ -30,15 +30,23 @@ export function getEngineType(): AIEngineType {
 }
 
 /**
+ * Get the configured AI difficulty from environment.
+ * Defaults to 'medium'.
+ */
+export function getDifficulty(): AIDifficulty {
+    const diff = (process.env.AI_DIFFICULTY || 'hard').toLowerCase();
+    if (['easy', 'medium', 'hard'].includes(diff)) return diff as AIDifficulty;
+    return 'hard';
+}
+
+/**
  * Pick the best move using the configured AI engine.
- *
- * - "rules" → Synchronous, deterministic priority scoring
- * - "llm"   → Async Gemini API call with rule-based fallback
  */
 export async function pickMoveStrategy(gameState: LudoGameState): Promise<AIMove | null> {
     const engine = getEngineType();
+    const difficulty = getDifficulty();
 
-    console.log(`[AI-Strategy] Using "${engine}" engine for game ${gameState.id}`);
+    console.log(`[AI-Strategy] Using "${engine}" engine (${difficulty}) for game ${gameState.id}`);
 
     switch (engine) {
         case 'llm':
@@ -46,6 +54,6 @@ export async function pickMoveStrategy(gameState: LudoGameState): Promise<AIMove
 
         case 'rules':
         default:
-            return ruleBasedPickMove(gameState);
+            return ruleBasedPickMove(gameState, difficulty);
     }
 }

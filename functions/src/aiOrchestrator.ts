@@ -22,7 +22,7 @@
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 import * as crypto from 'crypto';
-import { isAIPlayer, pickMoveStrategy } from './ai/aiStrategy';
+import { isAIPlayer, pickMoveStrategy, getEngineType } from './ai/aiStrategy';
 import {
     LudoGameState,
     LudoStatus,
@@ -115,7 +115,11 @@ export const aiOrchestrator = functions.firestore
             }
 
             // ── Delay for natural feel ──
-            await sleep(AI_DELAY_MS);
+            // If using LLM, we reduce the artificial delay because the API call
+            // itself provides a "thinking" pause.
+            const engine = getEngineType();
+            const delay = engine === 'llm' ? 200 : AI_DELAY_MS;
+            await sleep(delay);
 
             // ── Re-fetch state after delay (read fresh, act outside transaction) ──
             const freshDoc = await gameRef.get();
