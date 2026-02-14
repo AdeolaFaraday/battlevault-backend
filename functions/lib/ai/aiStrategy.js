@@ -18,7 +18,7 @@ function getDifficulty() {
     const diff = (process.env.AI_DIFFICULTY || 'hard').toLowerCase();
     if (['easy', 'medium', 'hard'].includes(diff))
         return diff;
-    return 'medium';
+    return 'hard';
 }
 async function pickMoveStrategy(gameState) {
     const engine = getEngineType();

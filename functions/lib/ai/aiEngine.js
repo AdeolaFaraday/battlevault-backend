@@ -7,17 +7,17 @@ const WEIGHTS = {
     easy: {
         capture: 800, finish: 400, activate: 300, advance: 100,
         risk: 0, threatFromHome: 0, startExit: 10, safe: 20,
-        pairing: 10, chasing: 5, randomness: 50
+        pairing: 10, chasing: 5, clustering: 0, escape: 0, randomness: 50
     },
     medium: {
         capture: 2500, finish: 1200, activate: 500, advance: 200,
         risk: -200, threatFromHome: -150, startExit: 80, safe: 150,
-        pairing: 100, chasing: 50, randomness: 10
+        pairing: 100, chasing: 50, clustering: -50, escape: 200, randomness: 10
     },
     hard: {
         capture: 5000, finish: 2500, activate: 800, advance: 400,
-        risk: -600, threatFromHome: -400, startExit: 150, safe: 300,
-        pairing: 300, chasing: 150, randomness: 0
+        risk: -800, threatFromHome: -600, startExit: 150, safe: 300,
+        pairing: 300, chasing: 150, clustering: -600, escape: 1500, randomness: 0
     },
 };
 function wouldCapture(tokens, playerColors, targetPos, isSafePath) {
@@ -38,6 +38,39 @@ function isPairing(tokens, playerColor, tokenId, targetPos, isSafePath) {
         return false;
     const myTokens = tokens[playerColor] || [];
     return myTokens.some(t => t.active && !t.isSafePath && t.sn !== tokenId && t.position === targetPos);
+}
+function calculateClusteringPenalty(tokens, playerColor, tokenId, targetPos, isSafePath) {
+    if (isSafePath)
+        return 0;
+    const myTokens = tokens[playerColor] || [];
+    const nearbyFriends = myTokens.filter(t => {
+        if (!t.active || t.isSafePath || t.sn === tokenId)
+            return false;
+        let dist = targetPos - t.position;
+        if (dist < 0)
+            dist += 52;
+        return dist >= 1 && dist <= 8;
+    });
+    if (nearbyFriends.length === 0)
+        return 0;
+    let opponentNearby = false;
+    for (const colorKey of Object.keys(tokens)) {
+        if (colorKey === playerColor)
+            continue;
+        const opponentTokens = tokens[colorKey] || [];
+        if (opponentTokens.some(t => {
+            if (!t.active || t.isSafePath)
+                return false;
+            let dist = targetPos - t.position;
+            if (dist < 0)
+                dist += 52;
+            return dist >= 1 && dist <= 15;
+        })) {
+            opponentNearby = true;
+            break;
+        }
+    }
+    return opponentNearby ? nearbyFriends.length : 0;
 }
 function checkThreatFromHome(tokens, playerColors, targetPos, isSafePath) {
     if (isSafePath)
@@ -196,6 +229,16 @@ function pickMove(gameState, difficulty = 'medium') {
                     if (scaledRisk > 0) {
                         score += Math.round(scaledRisk * config.risk);
                         reason += `Risk Penalty (${scaledRisk.toFixed(1)}) `;
+                    }
+                    const currentRisk = calculateScaledRisk(gameState.tokens, playerColors, token.position, token.isSafePath);
+                    if (currentRisk > 0) {
+                        score += config.escape;
+                        reason += "ESCAPE! ";
+                    }
+                    const clusteringCount = calculateClusteringPenalty(gameState.tokens, color, token.sn, projPos, willBeSafe);
+                    if (clusteringCount > 0) {
+                        score += (clusteringCount * config.clustering);
+                        reason += `Clustering Penalty (${clusteringCount}) `;
                     }
                     const chasingCount = calculateChasingBonus(gameState.tokens, playerColors, projPos, willBeSafe);
                     if (chasingCount > 0) {

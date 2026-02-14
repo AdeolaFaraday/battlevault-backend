@@ -4,6 +4,7 @@ import User from "../../../models/user/user";
 import SocialAuthService from "../../../services/auth/socialauth";
 import ClientResponse from "../../../services/response";
 import { generateSignUpUserData } from "../../../utlis/utlis";
+import DailyBlitzService from "../../../services/dailyBlitz";
 
 const MAX_BIO_LENGTH = 500;
 
@@ -46,11 +47,18 @@ export default class AuthService {
     }
   }
 
+
   static async login({ email, password }: { email: string; password: string }, context: any) {
     const result: any = await context.authenticate({
       email,
       password,
     });
+
+    // Check Daily Blitz Login Reward (Fire and Forget)
+    if (result.user && result.user.id) {
+      DailyBlitzService.checkLoginReward(result.user.id).catch(e => console.error("DailyBlitz Login Check Failed:", e));
+    }
+
     return new ClientResponse(200, true, 'Login successful', { user: result.user, token: result.token });
   }
 
@@ -84,6 +92,12 @@ export default class AuthService {
             isValidated: true,
           }),
         });
+
+        // Check Daily Blitz Login Reward (Fire and Forget)
+        if (result.user && result.user.id) {
+          DailyBlitzService.checkLoginReward(result.user.id).catch(e => console.error("DailyBlitz Login Check Failed:", e));
+        }
+
         return new ClientResponse(200, true, 'Login successful', { user: result.user, token: result.token });
       } else {
         const userData = await generateSignUpUserData(socialAuthData);
@@ -95,6 +109,12 @@ export default class AuthService {
         const jwt = require('jsonwebtoken');
         const { jwt: jwtEnv } = require('../../../config/environment');
         const authToken = jwt.sign({ id: newUser._id }, jwtEnv.jwtSecret, { expiresIn: jwtEnv.jwtExp });
+
+        // Check Daily Blitz Login Reward (Fire and Forget)
+        if (newUser && newUser.id) {
+          DailyBlitzService.checkLoginReward(newUser.id).catch(e => console.error("DailyBlitz Login Check Failed:", e));
+        }
+
         return new ClientResponse(200, true, 'Login successful', { user: newUser, token: authToken });
       }
     } catch (error) {
