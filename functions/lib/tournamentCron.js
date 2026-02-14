@@ -48,6 +48,7 @@ dotenv.config();
 const MONGO_URI = process.env.DB_CLOUD_CONNECTION || process.env.MONGO_URI || '';
 const MAILGUN_KEY = process.env.MAILGUN_API_KEY || '';
 const MAILGUN_DOMAIN = process.env.MAILGUN_DOMAIN || '';
+const MAILGUN_BASE = process.env.MAILGUN_BASE || 'https://api.eu.mailgun.net';
 let isConnected = false;
 const connectDB = async () => {
     if (isConnected)
@@ -66,7 +67,7 @@ const tournamentStageSchema = new mongoose_1.default.Schema({
     gameIds: [{ type: String }]
 }, { timestamps: true });
 const gameSchema = new mongoose_1.default.Schema({
-    stageId: { type: String },
+    stageId: { type: mongoose_1.default.Schema.Types.Mixed },
     status: { type: String },
     name: { type: String },
     players: [{ id: String, name: String }]
@@ -79,7 +80,11 @@ const TournamentStage = mongoose_1.default.models.TournamentStage || mongoose_1.
 const Game = mongoose_1.default.models.Game || mongoose_1.default.model('Game', gameSchema);
 const User = mongoose_1.default.models.User || mongoose_1.default.model('User', userSchema);
 const mailgun = new mailgun_js_1.default(form_data_1.default);
-const client = mailgun.client({ username: 'api', key: MAILGUN_KEY });
+const client = mailgun.client({
+    username: 'api',
+    key: MAILGUN_KEY,
+    url: MAILGUN_BASE
+});
 exports.tournamentNotificationCron = functions.pubsub
     .schedule('0 */12 * * *')
     .onRun(async (context) => {
@@ -94,7 +99,7 @@ exports.tournamentNotificationCron = functions.pubsub
         console.log(`Found ${activeStages.length} active stages with passed scheduled dates.`);
         for (const stage of activeStages) {
             const pendingGames = await Game.find({
-                stageId: stage._id.toString(),
+                stageId: { $in: [stage._id, stage._id.toString()] },
                 status: 'waiting'
             });
             if (pendingGames.length === 0) {

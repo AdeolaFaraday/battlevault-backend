@@ -12,6 +12,7 @@ dotenv.config();
 const MONGO_URI = process.env.DB_CLOUD_CONNECTION || process.env.MONGO_URI || '';
 const MAILGUN_KEY = process.env.MAILGUN_API_KEY || '';
 const MAILGUN_DOMAIN = process.env.MAILGUN_DOMAIN || '';
+const MAILGUN_BASE = process.env.MAILGUN_BASE || 'https://api.eu.mailgun.net';
 
 let isConnected = false;
 const connectDB = async () => {
@@ -32,7 +33,7 @@ const tournamentStageSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 const gameSchema = new mongoose.Schema({
-    stageId: { type: String },
+    stageId: { type: mongoose.Schema.Types.Mixed },
     status: { type: String },
     name: { type: String },
     players: [{ id: String, name: String }]
@@ -49,7 +50,11 @@ const User = mongoose.models.User || mongoose.model('User', userSchema);
 
 // Email Client
 const mailgun = new Mailgun(FormData);
-const client = mailgun.client({ username: 'api', key: MAILGUN_KEY });
+const client = mailgun.client({
+    username: 'api',
+    key: MAILGUN_KEY,
+    url: MAILGUN_BASE
+});
 
 export const tournamentNotificationCron = functions.pubsub
     .schedule('0 */12 * * *') // Every 12 hours
@@ -72,7 +77,7 @@ export const tournamentNotificationCron = functions.pubsub
             for (const stage of activeStages) {
                 // Find games in this stage that have not started
                 const pendingGames = await Game.find({
-                    stageId: (stage._id as any).toString(),
+                    stageId: { $in: [stage._id, (stage._id as any).toString()] },
                     status: 'waiting'
                 });
 
