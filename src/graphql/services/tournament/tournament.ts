@@ -280,7 +280,7 @@ export default class TournamentService {
             if (!stage || stage.status === 'COMPLETED') return;
 
             // Check if all games in this stage are finished in MongoDB
-            const gamesInStage = await Game.find({ stageId: stage._id });
+            const gamesInStage = await Game.find({ stageId: { $in: [stage._id, (stage._id as any).toString()] } });
             const allFinished = gamesInStage.every(g => g.status === 'finished');
 
             if (allFinished) {
