@@ -104,4 +104,5 @@ extend type Mutation {
   selectDice(gameId: ID!, diceValues: [Int!]!, name: String): Response!
   validateTurn(gameId: ID!): Response!
   updateLastSeen(gameId: ID!): Response!
+  renewTurnTime(gameId: ID!): Response!
 }

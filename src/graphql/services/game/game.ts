@@ -2,6 +2,7 @@ import Game from "../../../models/game/game";
 import RealtimeProviderFactory from "../../../services/realtime";
 import { admin } from "../../../services/auth";
 import TournamentStage from "../../../models/tournament/tournamentStage";
+import Wallet from "../../../models/wallet/wallet";
 import {
     LudoColor,
     LudoStatus,
@@ -893,6 +894,55 @@ export default class GameService {
             });
 
             return new ClientResponse(200, true, "Last seen updated successfully");
+        } catch (error: any) {
+            return new ClientResponse(400, false, error.message);
+        }
+    }
+
+    static async renewTurnTime(gameId: string, userId: string) {
+        const db = admin.firestore();
+        const gameRef = db.collection('games').doc(gameId);
+
+        try {
+            const result = await db.runTransaction(async (transaction) => {
+                const doc = await transaction.get(gameRef);
+                if (!doc.exists) throw new Error("Game not found");
+
+                const gameState = doc.data() as LudoGameState;
+
+                // Verify it's currently the user's turn
+                if (gameState.currentTurn !== userId) {
+                    throw new Error("Not your turn");
+                }
+
+                if (gameState.status !== LudoStatus.PLAYING_DICE && gameState.status !== LudoStatus.PLAYING_TOKEN) {
+                    throw new Error("Game is not in a state where turn can be renewed");
+                }
+
+                // Deduct 50 reward points
+                // @ts-ignore
+                await Wallet.debitRewards(userId, 50);
+
+                const now = Date.now();
+                const updates: any = {
+                    turnStartedAt: now,
+                    updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                };
+
+                // Update lastSeen for the player while we're at it
+                const playerIndex = gameState.players.findIndex(p => p.id === userId);
+                if (playerIndex !== -1) {
+                    const updatedPlayers = [...gameState.players];
+                    updatedPlayers[playerIndex] = { ...updatedPlayers[playerIndex], lastSeen: now };
+                    updates.players = updatedPlayers;
+                }
+
+                transaction.update(gameRef, updates);
+                const { id: __, ...stateData } = gameState as any;
+                return { ...stateData, ...updates, _id: gameId };
+            });
+
+            return new ClientResponse(200, true, "Turn time renewed successfully", this.formatGameState(result));
         } catch (error: any) {
             return new ClientResponse(400, false, error.message);
         }
