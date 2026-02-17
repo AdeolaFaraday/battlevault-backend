@@ -206,7 +206,8 @@ export default class GameService {
                 tokens: [LudoColor.RED, LudoColor.GREEN],
                 capturedCount: 0,
                 finishedCount: 0,
-                slot: 0
+                slot: 0,
+                lastSeen: Date.now()
             };
 
             const initialData = {
@@ -362,7 +363,8 @@ export default class GameService {
                         tokens: assignedPair.tokens,
                         capturedCount: 0,
                         finishedCount: 0,
-                        slot: slotToFill
+                        slot: slotToFill,
+                        lastSeen: Date.now()
                     };
 
                     // Ensure array is large enough for the slot
@@ -389,7 +391,8 @@ export default class GameService {
                         color: assignedColors[0],
                         tokens: assignedColors,
                         capturedCount: 0,
-                        finishedCount: 0
+                        finishedCount: 0,
+                        lastSeen: Date.now()
                     };
                     updatedPlayers.push(newPlayer);
                 }
@@ -403,6 +406,8 @@ export default class GameService {
                 if (activePlayers.length === 2 && gameState.status === LudoStatus.WAITING) {
                     updates.status = LudoStatus.PLAYING_DICE;
                     updates.currentTurn = activePlayers[0].id || "";
+                    updates.turnStartedAt = Date.now();
+                    updates.turnDuration = 60000; // 1 minute
                 }
 
                 transaction.update(gameRef, updates);
@@ -472,8 +477,17 @@ export default class GameService {
                         usedDiceValues: [],
                         activeDiceConfig: null,
                         lastMoverId: userId,
+                        turnStartedAt: Date.now(),
                         updatedAt: admin.firestore.FieldValue.serverTimestamp()
                     };
+
+                    // Update lastSeen for the player
+                    const playerIndex = gameState.players.findIndex(p => p.id === userId);
+                    if (playerIndex !== -1) {
+                        const updatedPlayers = [...gameState.players];
+                        updatedPlayers[playerIndex] = { ...updatedPlayers[playerIndex], lastSeen: Date.now() };
+                        updates.players = updatedPlayers;
+                    }
 
                     transaction.update(gameRef, updates);
                     const { id: __, ...stateData } = gameState as any;
@@ -491,6 +505,14 @@ export default class GameService {
                     lastMoverId: userId,
                     updatedAt: admin.firestore.FieldValue.serverTimestamp()
                 };
+
+                // Update lastSeen for the player
+                const playerIndex = gameState.players.findIndex(p => p.id === userId);
+                if (playerIndex !== -1) {
+                    const updatedPlayers = [...gameState.players];
+                    updatedPlayers[playerIndex] = { ...updatedPlayers[playerIndex], lastSeen: Date.now() };
+                    updates.players = updatedPlayers;
+                }
 
                 transaction.update(gameRef, updates);
                 const { id: ___, ...rollStateData } = gameState as any;
@@ -606,8 +628,22 @@ export default class GameService {
                         );
 
                         const { id: __, ...stateToUpdate } = updatedState as any;
+
+                        // Update lastSeen for the acting player
+                        const actingPlayerIndex = updatedState.players.findIndex((p: any) => p.id === userId);
+                        if (actingPlayerIndex !== -1) {
+                            const updatedPlayers = [...updatedState.players];
+                            updatedPlayers[actingPlayerIndex] = { ...updatedPlayers[actingPlayerIndex], lastSeen: Date.now() };
+                            stateToUpdate.players = updatedPlayers;
+                        }
+
+                        // If turn passed, reset timer
+                        if (updatedState.currentTurn !== userId) {
+                            stateToUpdate.turnStartedAt = Date.now();
+                        }
+
                         transaction.update(gameRef, stateToUpdate);
-                        return { ...updatedState, _id: gameId };
+                        return { ...updatedState, _id: gameId, turnStartedAt: stateToUpdate.turnStartedAt };
                     } else {
                         throw new Error("You need a 6 to move out!");
                     }
@@ -703,8 +739,22 @@ export default class GameService {
                 }
 
                 const { id: __, ...stateToUpdate } = updatedState as any;
+
+                // Update lastSeen for the acting player
+                const playerIndex = updatedState.players.findIndex((p: any) => p.id === userId);
+                if (playerIndex !== -1) {
+                    const updatedPlayers = [...updatedState.players];
+                    updatedPlayers[playerIndex] = { ...updatedPlayers[playerIndex], lastSeen: Date.now() };
+                    stateToUpdate.players = updatedPlayers;
+                }
+
+                // If turn passed, reset timer
+                if (updatedState.currentTurn !== userId) {
+                    stateToUpdate.turnStartedAt = Date.now();
+                }
+
                 transaction.update(gameRef, stateToUpdate);
-                return { ...updatedState, _id: gameId };
+                return { ...updatedState, _id: gameId, turnStartedAt: stateToUpdate.turnStartedAt };
             });
 
             if (errorToThrow) {
@@ -754,12 +804,95 @@ export default class GameService {
                     updatedAt: admin.firestore.FieldValue.serverTimestamp()
                 };
 
+                // Update lastSeen for the player
+                const playerIndex = gameState.players.findIndex(p => p.id === userId);
+                if (playerIndex !== -1) {
+                    const updatedPlayers = [...gameState.players];
+                    updatedPlayers[playerIndex] = { ...updatedPlayers[playerIndex], lastSeen: Date.now() };
+                    updates.players = updatedPlayers;
+                }
+
                 transaction.update(gameRef, updates);
                 const { id: __, ...stateData } = gameState as any;
                 return { ...stateData, ...updates, _id: gameId };
             });
 
             return new ClientResponse(200, true, "Dice selected successfully", this.formatGameState(result));
+        } catch (error: any) {
+            return new ClientResponse(400, false, error.message);
+        }
+    }
+
+    static async validateTurn(gameId: string) {
+        const db = admin.firestore();
+        const gameRef = db.collection('games').doc(gameId);
+
+        try {
+            const result = await db.runTransaction(async (transaction) => {
+                const doc = await transaction.get(gameRef);
+                if (!doc.exists) throw new Error("Game not found");
+
+                const gameState = doc.data() as LudoGameState;
+                if (gameState.status === LudoStatus.FINISHED || gameState.status === LudoStatus.WAITING) {
+                    return gameState;
+                }
+
+                const now = Date.now();
+                const turnStartedAt = gameState.turnStartedAt || 0;
+                const turnDuration = gameState.turnDuration || 60000; // 1 minute
+
+                // Check if turn has truly expired
+                if (now - turnStartedAt < turnDuration) {
+                    return gameState;
+                }
+
+                // Pass turn to next player
+                const nextPlayerId = getNextPlayerId(gameState.players, gameState.currentTurn);
+                const updates: any = {
+                    currentTurn: nextPlayerId,
+                    status: LudoStatus.PLAYING_DICE,
+                    diceValue: [],
+                    usedDiceValues: [],
+                    activeDiceConfig: null,
+                    turnStartedAt: now,
+                    updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                };
+
+                transaction.update(gameRef, updates);
+                const { id: __, ...stateData } = gameState as any;
+                return { ...stateData, ...updates, _id: gameId };
+            });
+
+            return new ClientResponse(200, true, "Turn validated and passed if expired", this.formatGameState(result));
+        } catch (error: any) {
+            return new ClientResponse(400, false, error.message);
+        }
+    }
+
+    static async updateLastSeen(gameId: string, userId: string) {
+        const db = admin.firestore();
+        const gameRef = db.collection('games').doc(gameId);
+
+        try {
+            await db.runTransaction(async (transaction) => {
+                const doc = await transaction.get(gameRef);
+                if (!doc.exists) throw new Error("Game not found");
+
+                const gameState = doc.data() as LudoGameState;
+                const playerIndex = gameState.players.findIndex(p => p.id === userId);
+
+                if (playerIndex === -1) throw new Error("Player not found in this game");
+
+                const updatedPlayers = [...gameState.players];
+                updatedPlayers[playerIndex] = { ...updatedPlayers[playerIndex], lastSeen: Date.now() };
+
+                transaction.update(gameRef, {
+                    players: updatedPlayers,
+                    updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                });
+            });
+
+            return new ClientResponse(200, true, "Last seen updated successfully");
         } catch (error: any) {
             return new ClientResponse(400, false, error.message);
         }

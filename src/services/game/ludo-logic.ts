@@ -30,6 +30,7 @@ export interface LudoPlayer {
     capturedCount?: number;
     finishedCount?: number;
     slot?: number | string;
+    lastSeen?: number;
 }
 
 export interface TokenMap {
@@ -51,6 +52,8 @@ export interface LudoGameState {
     activeDiceConfig: number[] | null;
     lastMoverId?: string;
     startDate?: any;
+    turnStartedAt?: number;
+    turnDuration?: number;
 }
 
 export const HOME_POSITIONS: { [key: string]: number } = {

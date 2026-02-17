@@ -54,10 +54,13 @@ const gameSchema: Schema = new Schema(
                     lowercase: true
                 },
                 tokens: [{ type: String }],
-                slot: { type: Schema.Types.Mixed, required: true } // Added slot identifiers
+                slot: { type: Schema.Types.Mixed, required: true }, // Added slot identifiers
+                lastSeen: { type: Number, default: Date.now }
             }
         ],
         currentTurn: { type: String, required: false },
+        turnStartedAt: { type: Number, required: false },
+        turnDuration: { type: Number, required: false, default: 60000 }, // 1 minute
         diceValue: [{ type: Number }],
         isRolling: { type: Boolean, default: false },
         status: {
