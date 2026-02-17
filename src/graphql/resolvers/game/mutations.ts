@@ -32,6 +32,15 @@ const gameMutations = {
     selectDice: gameSessionRequest(async (_: any, { gameId, diceValues, name }: { gameId: string, diceValues: number[], name?: string }, context: any) => {
         const userId = context.getActingUserId();
         return await GameService.selectDice(gameId, diceValues, userId);
+    }),
+
+    validateTurn: gameSessionRequest(async (_: any, { gameId }: { gameId: string }, context: any) => {
+        return await GameService.validateTurn(gameId);
+    }),
+
+    updateLastSeen: gameSessionRequest(async (_: any, { gameId }: { gameId: string }, context: any) => {
+        const userId = context.getActingUserId();
+        return await GameService.updateLastSeen(gameId, userId);
     })
 }
 
