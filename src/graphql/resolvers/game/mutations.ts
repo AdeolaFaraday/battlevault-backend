@@ -41,6 +41,11 @@ const gameMutations = {
     updateLastSeen: gameSessionRequest(async (_: any, { gameId }: { gameId: string }, context: any) => {
         const userId = context.getActingUserId();
         return await GameService.updateLastSeen(gameId, userId);
+    }),
+
+    renewTurnTime: gameSessionRequest(async (_: any, { gameId }: { gameId: string }, context: any) => {
+        const userId = context.getActingUserId();
+        return await GameService.renewTurnTime(gameId, userId);
     })
 }
 
