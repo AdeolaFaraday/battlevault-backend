@@ -12,6 +12,7 @@ export interface LudoPlayer {
     color: string;
     tokens: string[];
     slot: number | string;
+    lastSeen?: number;
 }
 
 export interface LudoGameState {
@@ -25,6 +26,8 @@ export interface LudoGameState {
     tokens?: any;
     usedDiceValues: number[];
     activeDiceConfig: number[];
+    turnStartedAt?: number;
+    turnDuration?: number;
 }
 
 interface GameDoc extends Document, LudoGameState {

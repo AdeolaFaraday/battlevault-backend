@@ -42,6 +42,7 @@ type LudoPlayer {
   tokens: [LudoColor!]!
   capturedCount: Int
   finishedCount: Int
+  lastSeen: Float
 }
 
 type LudoGameState {
@@ -57,6 +58,8 @@ type LudoGameState {
   tokens: TokenMap
   usedDiceValues: [Int!]!
   activeDiceConfig: [Int!]
+  turnStartedAt: Float
+  turnDuration: Int
   lastMoverId: String
   startDate: String
   createdAt: String
@@ -99,4 +102,6 @@ extend type Mutation {
   processMove(gameId: ID!, input: MoveInput!, name: String): Response!
   joinGame(gameId: ID!, userId: ID, name: String!): Response!
   selectDice(gameId: ID!, diceValues: [Int!]!, name: String): Response!
+  validateTurn(gameId: ID!): Response!
+  updateLastSeen(gameId: ID!): Response!
 }
