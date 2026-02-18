@@ -408,7 +408,7 @@ export default class GameService {
                     updates.status = LudoStatus.PLAYING_DICE;
                     updates.currentTurn = activePlayers[0].id || "";
                     updates.turnStartedAt = Date.now();
-                    updates.turnDuration = 60000; // 1 minute
+                    updates.turnDuration = 30000; // 30 seconds
                 }
 
                 transaction.update(gameRef, updates);
@@ -840,7 +840,7 @@ export default class GameService {
 
                 const now = Date.now();
                 const turnStartedAt = gameState.turnStartedAt || 0;
-                const turnDuration = gameState.turnDuration || 60000; // 1 minute
+                const turnDuration = gameState.turnDuration || 30000; // 30 seconds
 
                 // Check if turn has truly expired
                 if (now - turnStartedAt < turnDuration) {

@@ -60,7 +60,7 @@ const gameSchema: Schema = new Schema(
         ],
         currentTurn: { type: String, required: false },
         turnStartedAt: { type: Number, required: false },
-        turnDuration: { type: Number, required: false, default: 60000 }, // 1 minute
+        turnDuration: { type: Number, required: false, default: 30000 }, // 30 seconds
         diceValue: [{ type: Number }],
         isRolling: { type: Boolean, default: false },
         status: {
