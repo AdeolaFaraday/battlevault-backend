@@ -277,6 +277,6 @@ export const calculateMoveUpdate = (
         activeDiceConfig: null,
         status: isTurnOver ? "playingDice" : "playingToken",
         currentTurn: (isTurnOver && !grantsExtraTurn) ? getNextPlayerId(gameState.players, gameState.currentTurn) : gameState.currentTurn,
-        // lastMoverId: isTurnOver ? gameState.currentTurn : undefined,
+        turnStartedAt: (isTurnOver && grantsExtraTurn) ? Date.now() : gameState.turnStartedAt,
     };
 };
