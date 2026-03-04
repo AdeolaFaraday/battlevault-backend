@@ -50,6 +50,7 @@ const App = async () => {
     };
 
     app.use(cors(corsOptions))
+    app.options("*", cors());
 
     app.use(cookieParser());
     app.set('trust proxy', 1);
