@@ -39,6 +39,22 @@ type AccountVerification {
   bankId: Int
 }
 
+type PaystackTransfer {
+  id: Int
+  domain: String
+  amount: Float
+  currency: String
+  reference: String
+  source: String
+  reason: String
+  status: String
+  transfer_code: String
+  transferred_at: String
+  recipient: JSON
+  createdAt: String
+  updatedAt: String
+}
+
 extend type Query {
   getWallet: Response
   getSavedBanks: Response

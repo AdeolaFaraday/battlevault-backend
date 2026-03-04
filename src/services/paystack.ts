@@ -1,8 +1,16 @@
 import axios from 'axios';
 import crypto from 'crypto';
 import { paystack } from '../config/environment';
+import {
+    TransferProviderInterface,
+    Bank,
+    RecipientData,
+    RecipientResponse,
+    TransferData,
+    TransferResponse
+} from './payment/TransferProviderInterface';
 
-class PaystackService {
+class PaystackService implements TransferProviderInterface {
     private readonly baseUrl = 'https://api.paystack.co';
 
     private get headers() {
@@ -14,26 +22,17 @@ class PaystackService {
 
     /**
      * Create a transfer recipient
-     * @param name - Full name of the recipient
-     * @param account_number - Bank account number
-     * @param bank_code - 3-digit bank code
-     * @param currency - Currency (default: NGN)
      */
-    async createRecipient(
-        name: string,
-        account_number: string,
-        bank_code: string,
-        currency: string = 'NGN'
-    ) {
+    async createRecipient(data: RecipientData): Promise<RecipientResponse> {
         try {
             const response = await axios.post(
                 `${this.baseUrl}/transferrecipient`,
                 {
                     type: 'nuban',
-                    name,
-                    account_number,
-                    bank_code,
-                    currency,
+                    name: data.name,
+                    account_number: data.account_number,
+                    bank_code: data.bank_code,
+                    currency: data.currency || 'NGN',
                 },
                 { headers: this.headers }
             );
@@ -42,7 +41,16 @@ class PaystackService {
                 throw new Error(response.data.message);
             }
 
-            return response.data.data;
+            const recipient = response.data.data;
+            return {
+                recipient_code: recipient.recipient_code,
+                name: recipient.name,
+                account_number: recipient.details.account_number,
+                bank_name: recipient.details.bank_name,
+                bank_code: recipient.details.bank_code,
+                currency: recipient.currency,
+                details: recipient,
+            };
         } catch (error: any) {
             console.error('Paystack Create Recipient Error:', error.response?.data || error.message);
             throw new Error(error.response?.data?.message || 'Failed to create transfer recipient');
@@ -51,26 +59,17 @@ class PaystackService {
 
     /**
      * Initiate a transfer
-     * @param amount - Amount in kobo (NGN * 100)
-     * @param recipient - Recipient code
-     * @param reference - Unique transfer reference
-     * @param reason - Reason for transfer
      */
-    async initiateTransfer(
-        amount: number,
-        recipient: string,
-        reference: string,
-        reason: string = 'Withdrawal'
-    ) {
+    async initiateTransfer(data: TransferData): Promise<TransferResponse> {
         try {
             const response = await axios.post(
                 `${this.baseUrl}/transfer`,
                 {
                     source: 'balance',
-                    amount,
-                    recipient,
-                    reference,
-                    reason,
+                    amount: data.amount,
+                    recipient: data.recipient_code,
+                    reference: data.reference,
+                    reason: data.narration,
                 },
                 { headers: this.headers }
             );
@@ -79,7 +78,15 @@ class PaystackService {
                 throw new Error(response.data.message);
             }
 
-            return response.data.data;
+            const transfer = response.data.data;
+            return {
+                transfer_code: transfer.transfer_code,
+                reference: transfer.reference,
+                status: transfer.status,
+                amount: transfer.amount,
+                currency: transfer.currency,
+                raw: transfer,
+            };
         } catch (error: any) {
             console.error('Paystack Initiate Transfer Error:', error.response?.data || error.message);
             throw new Error(error.response?.data?.message || 'Failed to initiate transfer');
@@ -105,7 +112,7 @@ class PaystackService {
      * List all banks supported by Paystack
      * @param country - Country code (default: nigeria)
      */
-    async listBanks(country: string = 'nigeria') {
+    async getBanks(country: string = 'nigeria'): Promise<Bank[]> {
         try {
             const response = await axios.get(
                 `${this.baseUrl}/bank?country=${country}`,
@@ -116,7 +123,11 @@ class PaystackService {
                 throw new Error(response.data.message);
             }
 
-            return response.data.data;
+            return response.data.data.map((bank: any) => ({
+                id: bank.id,
+                code: bank.code,
+                name: bank.name,
+            }));
         } catch (error: any) {
             console.error('Paystack List Banks Error:', error.response?.data || error.message);
             throw new Error(error.response?.data?.message || 'Failed to fetch banks');
@@ -125,8 +136,6 @@ class PaystackService {
 
     /**
      * Resolve/verify a bank account number
-     * @param account_number - Bank account number
-     * @param bank_code - Bank code
      */
     async resolveAccountNumber(account_number: string, bank_code: string) {
         try {

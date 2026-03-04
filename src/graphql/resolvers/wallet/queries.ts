@@ -1,7 +1,7 @@
 import authenticatedRequest from "../../authenticatedRequest";
 import ClientResponse from "../../../services/response";
 import Bank from "../../../models/bank/bank";
-import PaystackService from "../../../services/paystack";
+import PaymentProviderFactory from "../../../services/payment";
 
 const walletQueries = {
     getSavedBanks: authenticatedRequest(
@@ -17,7 +17,8 @@ const walletQueries = {
 
     listBanks: async () => {
         try {
-            const banks = await PaystackService.listBanks();
+            const paymentProvider = PaymentProviderFactory.getProvider();
+            const banks = await paymentProvider.getBanks(process.env.COUNTRY_CODE || 'NG');
             return new ClientResponse(200, true, 'Banks retrieved successfully', { banks });
         } catch (error: any) {
             return new ClientResponse(400, false, error.message);
@@ -29,7 +30,8 @@ const walletQueries = {
         { accountNumber, bankCode }: { accountNumber: string; bankCode: string }
     ) => {
         try {
-            const result = await PaystackService.resolveAccountNumber(accountNumber, bankCode);
+            const paymentProvider = PaymentProviderFactory.getProvider();
+            const result = await paymentProvider.resolveAccountNumber(accountNumber, bankCode);
             return new ClientResponse(200, true, 'Account verified successfully', {
                 accountNumber: result.account_number,
                 accountName: result.account_name,
