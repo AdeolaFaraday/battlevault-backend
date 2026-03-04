@@ -1,12 +1,12 @@
 import { v4 as uuidv4 } from 'uuid';
 import authenticatedRequest from "../../authenticatedRequest";
 import ClientResponse from "../../../services/response";
-import PaystackService from "../../../services/paystack";
+import PaymentProviderFactory from "../../../services/payment";
 import User from "../../../models/user/user";
 import Wallet from "../../../models/wallet/wallet";
 import Transaction, { createTransaction } from "../../../models/transaction";
 
-import Bank from "../../../models/bank";
+import Bank from "../../../models/bank/bank";
 
 const walletMutations = {
     createTransferRecipient: authenticatedRequest(
@@ -33,17 +33,18 @@ const walletMutations = {
                 }
 
                 const name = `${user.firstName} ${user.lastName}`;
-                const recipientData = await PaystackService.createRecipient(
+                const paymentProvider = PaymentProviderFactory.getProvider();
+                const recipientData = await paymentProvider.createRecipient({
                     name,
-                    accountNumber,
-                    bankCode
-                );
+                    account_number: accountNumber,
+                    bank_code: bankCode
+                });
 
                 const newBank = new Bank({
                     userId: user._id,
-                    accountName: recipientData.details.account_name || name,
+                    accountName: recipientData.name || name,
                     accountNumber,
-                    bankName: recipientData.details.bank_name,
+                    bankName: recipientData.bank_name,
                     bankCode,
                     recipientCode: recipientData.recipient_code,
                     currency: recipientData.currency || 'NGN'
@@ -81,12 +82,16 @@ const walletMutations = {
                 const paystackAmount = Math.round(amount * 100);
                 const reference = `BV_${uuidv4().replace(/-/g, '').substring(0, 20)}`;
 
-                const transfer = await PaystackService.initiateTransfer(
-                    paystackAmount,
-                    bank.recipientCode,
+                const paymentProvider = PaymentProviderFactory.getProvider();
+                const transfer = await paymentProvider.initiateTransfer({
+                    amount: paystackAmount,
+                    recipient_code: bank.recipientCode,
                     reference,
-                    'BattleVault Withdrawal'
-                );
+                    narration: 'BattleVault Withdrawal',
+                    currency: bank.currency || 'NGN',
+                    account_number: bank.accountNumber,
+                    bank_code: bank.bankCode
+                });
 
                 // Deduct from withdrawable and add to locked (held funds)
                 const previousBalance = wallet.withdrawable;
@@ -106,7 +111,8 @@ const walletMutations = {
                     metadata: {
                         bank: bank.bankName,
                         accountNumber: bank.accountNumber,
-                        transferCode: transfer.data.transfer_code
+                        transferCode: transfer?.transfer_code,
+                        reference: transfer?.reference,
                     }
                 });
 

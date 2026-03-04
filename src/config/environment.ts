@@ -34,11 +34,17 @@ const loadAppEnvs = () => {
         webhookSecret: process.env.PAYSTACK_WEBHOOK_SECRET,
     };
 
-    return { port, env, db, jwt, paystack, whitelist };
+    const flutterwave = {
+        secretKey: process.env.FLW_SECRET_KEY,
+        baseUrl: process.env.FLW_BASE_URL || 'https://api.flutterwave.com/v3',
+        webhookSecretHash: process.env.FLW_WEBHOOK_SECRET_HASH,
+    };
+
+    return { port, env, db, jwt, paystack, flutterwave, whitelist };
 };
 
-const { port, env, db, jwt, paystack, whitelist } = loadAppEnvs();
+const { port, env, db, jwt, paystack, flutterwave, whitelist } = loadAppEnvs();
 
-export { port, env, db, jwt, paystack, whitelist };
+export { port, env, db, jwt, paystack, flutterwave, whitelist };
 
 export default loadAppEnvs;

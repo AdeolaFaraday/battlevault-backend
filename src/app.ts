@@ -157,7 +157,56 @@ const App = async () => {
             }
         } catch (error) {
             console.error('Error processing Paystack webhook:', error);
-            // Return 200 to Paystack to avoid retries, but log the error
+        }
+
+        res.sendStatus(200);
+    });
+
+    app.post('/webhooks/flutterwave', async (req: any, res: any) => {
+        const signature = req.headers['verif-hash'] as string;
+        const FlutterwaveService = (await import('./services/payment/FlutterwaveTransferService')).default;
+
+        if (!FlutterwaveService.verifySignature(signature)) {
+            return res.status(401).send('Invalid signature');
+        }
+
+        const event = req.body;
+        const { event: eventType, data } = event;
+
+        try {
+            // Flutterwave event types: transfer.completed
+            if (eventType === 'transfer.completed') {
+                const { reference, amount, status, beneficiary_name } = data;
+
+                const transaction = await Transaction.findOne({ reference });
+
+                if (transaction) {
+                    if (status === 'SUCCESSFUL') {
+                        transaction.status = 'SUCCESS';
+                        await transaction.save();
+
+                        const wallet = await Wallet.findOne({ userId: transaction.userId });
+                        if (wallet) {
+                            wallet.locked -= amount;
+                            await wallet.save();
+                            console.log(`Transfer successful for user ${transaction.userId} (Flutterwave).`);
+                        }
+                    } else if (status === 'FAILED') {
+                        transaction.status = 'FAILED';
+                        await transaction.save();
+
+                        const wallet = await Wallet.findOne({ userId: transaction.userId });
+                        if (wallet) {
+                            wallet.locked -= amount;
+                            wallet.withdrawable += amount;
+                            await wallet.save();
+                            console.log(`Transfer failed for user ${transaction.userId} (Flutterwave). Funds returned.`);
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error processing Flutterwave webhook:', error);
         }
 
         res.sendStatus(200);
