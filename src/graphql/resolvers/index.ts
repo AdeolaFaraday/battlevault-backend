@@ -32,6 +32,7 @@ const resolvers = {
             if (obj.accountName !== undefined && obj.accountNumber !== undefined && obj.bankId !== undefined) return 'AccountVerification';
             if (obj.url && obj.fileName && !obj.user) return 'UploadedFile';
             if (obj.files && Array.isArray(obj.files)) return 'UploadedFiles';
+            if (obj.transfer_code !== undefined) return 'PaystackTransfer';
 
             console.error('[GraphQL Union Resolver] Failed to resolve type for keys:', Object.keys(obj));
             return null;

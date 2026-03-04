@@ -70,3 +70,8 @@ export const generateSignUpUserData = async (data: any) => {
     },
   };
 }
+
+export const BankTestAccounts = {
+  account_number: "0690000034",
+  bank_code: "044",
+}
