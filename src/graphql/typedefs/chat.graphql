@@ -1,0 +1,43 @@
+type ChatParticipant {
+  id: ID
+  userName: String
+  firstName: String
+  lastName: String
+  avatar: String
+}
+
+type Message {
+  id: ID
+  chatId: ID
+  senderId: String
+  text: String
+  timestamp: String
+  read: Boolean
+}
+
+type Chat {
+  id: ID
+  participants: [String]
+  participantDetails: [ChatParticipant]
+  lastMessage: String
+  lastMessageTimestamp: String
+  unreadCount: Int
+}
+
+type ChatList {
+  chats: [Chat]
+}
+
+type UserList {
+  users: [User]
+}
+
+extend type Query {
+  searchUsers(query: String!, limit: Int): Response!
+  getChatList: Response!
+}
+
+extend type Mutation {
+  createMessage(recipientId: String!, text: String!): Response!
+  markChatAsRead(chatId: String!): Response!
+}

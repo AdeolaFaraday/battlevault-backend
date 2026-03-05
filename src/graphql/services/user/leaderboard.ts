@@ -35,20 +35,35 @@ export default class LeaderboardService {
             const pipeline: any[] = [
                 // Match users with games played (and optional search)
                 { $match: matchConditions },
-                // Calculate win percentage
+                // Calculate win percentage and weighted score
                 {
                     $addFields: {
                         winPercentage: {
-                            $multiply: [
-                                { $divide: ["$totalWins", "$totalGamesPlayed"] },
-                                100
+                            $cond: [
+                                { $eq: ["$totalGamesPlayed", 0] },
+                                0,
+                                {
+                                    $multiply: [
+                                        { $divide: ["$totalWins", "$totalGamesPlayed"] },
+                                        100
+                                    ]
+                                }
+                            ]
+                        },
+                        // Bayesian Average: (Wins + K*C) / (TotalGames + K)
+                        // K = 20 (Confidence weight), C = 0.5 (Prior probability)
+                        weightedScore: {
+                            $divide: [
+                                { $add: ["$totalWins", 10] }, // 10 = 20 * 0.5
+                                { $add: ["$totalGamesPlayed", 20] }
                             ]
                         }
                     }
                 },
-                // Sort by win percentage (desc), then by total wins (desc) as tiebreaker
+                // Sort by weighted Score (desc)
                 {
                     $sort: {
+                        weightedScore: -1,
                         winPercentage: -1,
                         totalWins: -1,
                         _id: 1
@@ -71,7 +86,8 @@ export default class LeaderboardService {
                         totalLosses: 1,
                         currentStreak: 1,
                         bestStreak: 1,
-                        winPercentage: 1
+                        winPercentage: 1,
+                        weightedScore: 1
                     }
                 }
             ];
