@@ -2,15 +2,9 @@ import ChatService from "../../../services/chat";
 import authenticatedRequest from "../../authenticatedRequest";
 
 export const chatQueries = {
-    searchUsers: async (_: any, { query, limit }: { query: string, limit?: number }, context: any) => {
+    searchUsers: authenticatedRequest(async (_: any, { query, limit }: { query: string, limit?: number }, context: any) => {
         try {
-            // Can add context.user validation if authentication is required for search
-            /*
-            if (!context.user) {
-                return { statusCode: 401, success: false, message: 'Unauthorized', data: null };
-            }
-            */
-            const users = await ChatService.searchUsers(query, limit);
+            const users = await ChatService.searchUsers(query, limit, context.currentUser.id);
             return {
                 statusCode: 200,
                 success: true,
@@ -25,7 +19,7 @@ export const chatQueries = {
                 data: null
             };
         }
-    },
+    }),
 
     getChatList: authenticatedRequest(async (_: any, __: any, context: any) => {
         try {

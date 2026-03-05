@@ -8,20 +8,26 @@ class ChatService {
      * @param limit Max limit to return
      * @returns List of users matching the query
      */
-    static async searchUsers(query: string, limit: number = 20) {
+    static async searchUsers(query: string, limit: number = 20, currentUserId?: string) {
         if (!query || query.trim() === '') {
             return [];
         }
 
         const regex = new RegExp(query, 'i');
-        const users = await User.find({
+        const filter: any = {
             $or: [
                 { userName: regex },
                 { firstName: regex },
                 { lastName: regex },
                 { email: regex }
             ]
-        })
+        };
+
+        if (currentUserId) {
+            filter._id = { $ne: currentUserId };
+        }
+
+        const users = await User.find(filter)
             .select('id userName firstName lastName avatar email')
             .limit(limit)
             .lean();
