@@ -7,6 +7,7 @@ import { tournamentQueries, tournamentMutations } from './tournament';
 import { walletMutations, walletQueries } from './wallet';
 import { uploadMutations } from './upload';
 import { dailyBlitzQueries } from './dailyBlitz';
+import { chatQueries, chatMutations } from './chat';
 
 
 const resolvers = {
@@ -33,6 +34,10 @@ const resolvers = {
             if (obj.url && obj.fileName && !obj.user) return 'UploadedFile';
             if (obj.files && Array.isArray(obj.files)) return 'UploadedFiles';
             if (obj.transfer_code !== undefined) return 'PaystackTransfer';
+            if (obj.chats !== undefined && Array.isArray(obj.chats)) return 'ChatList';
+            if (obj.users !== undefined && Array.isArray(obj.users)) return 'UserList';
+            if (obj.chatId !== undefined && obj.text !== undefined) return 'Message';
+            if (obj.participants !== undefined && obj.lastMessage !== undefined) return 'Chat';
 
             console.error('[GraphQL Union Resolver] Failed to resolve type for keys:', Object.keys(obj));
             return null;
@@ -44,6 +49,7 @@ const resolvers = {
         ...tournamentQueries,
         ...walletQueries,
         ...dailyBlitzQueries,
+        ...chatQueries,
     },
     Mutation: {
         ...userMutations,
@@ -51,6 +57,7 @@ const resolvers = {
         ...tournamentMutations,
         ...walletMutations,
         ...uploadMutations,
+        ...chatMutations,
     }
 }
 

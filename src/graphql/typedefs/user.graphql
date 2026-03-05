@@ -38,6 +38,7 @@ type LeaderboardPlayer {
   currentStreak: Int
   bestStreak: Int
   winPercentage: Float
+  weightedScore: Float
 }
 
 type LeaderboardResult {
