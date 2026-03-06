@@ -162,6 +162,58 @@ class ChatService {
 
         return populatedChats;
     }
+
+    /**
+     * Get total unread messages count and the messages for a user
+     */
+    static async getUnreadMessagesCount(userId: string) {
+        const firestore = admin.firestore();
+
+        const snapshot = await firestore.collection('chats')
+            .where('participants', 'array-contains', userId)
+            .get();
+
+        if (snapshot.empty) {
+            return { totalUnread: 0, messages: [] };
+        }
+
+        let totalUnread = 0;
+        const messagePromises: Promise<any>[] = [];
+
+        snapshot.docs.forEach(doc => {
+            const data = doc.data();
+            const count = (data.unreadCounts && data.unreadCounts[userId]) || 0;
+
+            if (count > 0) {
+                totalUnread += count;
+                // Fetch the actual unread messages from the subcollection
+                // Since we know the count, we can limit the query to that number
+                const messagesPromise = doc.ref.collection('messages')
+                    .where('senderId', '!=', userId) // Messages not sent by the current user
+                    .where('read', '==', false)
+                    .orderBy('senderId') // Required when combining != and orderBy on different fields
+                    .orderBy('timestamp', 'desc')
+                    .limit(count)
+                    .get()
+                    .then(msgSnapshot => {
+                        return msgSnapshot.docs.map(msgDoc => ({
+                            id: msgDoc.id,
+                            ...msgDoc.data()
+                        }));
+                    });
+
+                messagePromises.push(messagesPromise);
+            }
+        });
+
+        const messagesArrays = await Promise.all(messagePromises);
+        // Flatten the array of message arrays
+        const messages = messagesArrays.flat().sort((a, b) =>
+            new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+        );
+
+        return { totalUnread, messages };
+    }
 }
 
 export default ChatService;

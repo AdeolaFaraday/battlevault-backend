@@ -32,9 +32,15 @@ type UserList {
   users: [User]
 }
 
+type UnreadMessagesResponse {
+  unreadCount: Int
+  messages: [Message]
+}
+
 extend type Query {
   searchUsers(query: String!, limit: Int): Response!
   getChatList: Response!
+  getUserUnreadMessagesCount: Response!
 }
 
 extend type Mutation {
