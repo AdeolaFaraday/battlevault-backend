@@ -11,35 +11,37 @@ const MAX_BIO_LENGTH = 500;
 export default class AuthService {
   static async register(userInput: CreateUserInputs, context: any) {
     try {
-      const user = await User.getUser({
-        find: {
-          $or: [{ email: userInput.email }, { username: userInput.userName }],
-        },
+      // Check if email is already registered
+      const existingEmail = await User.getUser({
+        find: { email: userInput.email },
       });
 
-      if (user && !user.password) {
+      if (existingEmail && !existingEmail.password) {
         return new ClientResponse(
           400,
           false,
-          'Oops! You have a existing account, Please set a password on it'
+          'Oops! You already have an account. Please set a password on it'
         );
       }
-      if (user) {
-        return new ClientResponse(400, false, 'User already exists');
+      if (existingEmail) {
+        return new ClientResponse(400, false, 'An account with this email already exists');
       }
+
+      // Check if username is already taken
+      const existingUsername = await User.getUser({
+        find: { userName: userInput.userName },
+      });
+
+      if (existingUsername) {
+        return new ClientResponse(400, false, 'Username is already taken. Please choose another');
+      }
+
       const newUser = await User.createUser({ ...userInput });
-
-      // const authenticatedUser = await context.authenticate({
-      //   email: userInput.email,
-      //   password: userInput.password,
-      // });
-
-      // context.login(authenticatedUser);
 
       return new ClientResponse(
         200,
         true,
-        'Account creation successfully. Check your email for verification',
+        'Account created successfully. Check your email for verification',
         null
       );
     } catch (err: any) {

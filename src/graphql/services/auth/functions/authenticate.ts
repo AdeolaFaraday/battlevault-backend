@@ -40,11 +40,9 @@ export const authenticate = (req: Request, res: Response) => {
 
         if (!matchingUser) {
             throw new Error('No matching user');
-        }
-        //  else if (!matchingUser.emailVerifiedAt) {
-        //     throw new Error('Please verify your email address!');
-        // } 
-        else {
+        } else if (!matchingUser.emailVerifiedAt) {
+            throw new Error('Please verify your email address before logging in');
+        } else {
             try {
                 if (JSON.parse(password).isValidated) {
                     const token = loginUser(matchingUser, res);
