@@ -45,15 +45,15 @@ const awardTournamentPrize = async (winnerId, tournamentId) => {
         }, { strict: false, timestamps: true });
         const Wallet = mongoose_1.default.models.Wallet || mongoose_1.default.model('Wallet', walletSchema);
         await Wallet.findOneAndUpdate({ userId: winnerId }, {
-            $inc: { pending: prizeAmount },
+            $inc: { withdrawable: prizeAmount },
             $setOnInsert: {
                 userId: winnerId,
-                withdrawable: 0,
+                pending: 0,
                 rewards: 0,
                 currency: 'NGN'
             }
         }, { upsert: true, new: true });
-        console.log(`Credited wallet for user ${winnerId} with pending amount: ${prizeAmount}`);
+        console.log(`Credited wallet for user ${winnerId} with withdrawable amount: ${prizeAmount}`);
     }
     catch (error) {
         console.error(`Error in awardTournamentPrize for tournament ${tournamentId}:`, error);

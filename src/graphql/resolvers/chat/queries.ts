@@ -41,5 +41,27 @@ export const chatQueries = {
                 data: null
             };
         }
+    }),
+
+    getUserUnreadMessagesCount: authenticatedRequest(async (_: any, __: any, context: any) => {
+        try {
+            if (!context.currentUser) {
+                return { statusCode: 401, success: false, message: 'Unauthorized', data: null };
+            }
+            const { totalUnread, messages } = await ChatService.getUnreadMessagesCount(context.currentUser.id);
+            return {
+                statusCode: 200,
+                success: true,
+                message: 'Unread messages fetched successfully',
+                data: { unreadCount: totalUnread, messages }
+            };
+        } catch (error: any) {
+            return {
+                statusCode: 500,
+                success: false,
+                message: error.message || 'Error occurred while fetching unread messages',
+                data: null
+            };
+        }
     })
 };
