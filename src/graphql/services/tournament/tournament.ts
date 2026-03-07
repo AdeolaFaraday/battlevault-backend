@@ -295,6 +295,7 @@ export default class TournamentService {
                         const matchB = parseInt(b.name.split('Match ')[1]) || 0;
                         return matchA - matchB;
                     });
+                // console.log({ stageGamesPlayers: stageGames.map(g => g.players).flat() })
                 return {
                     ...stage,
                     games: stageGames
