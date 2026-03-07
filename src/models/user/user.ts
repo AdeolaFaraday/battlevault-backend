@@ -70,6 +70,11 @@ const userSchema: Schema = new Schema(
             type: String,
             enum: ['MALE', 'FEMALE', 'OTHER'],
         },
+        role: {
+            type: String,
+            enum: ['USER', 'ADMIN'],
+            default: 'USER',
+        },
         country: {
             countryName: { type: String },
             countryCode: { type: String },

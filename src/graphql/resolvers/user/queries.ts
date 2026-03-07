@@ -2,6 +2,7 @@ import ClientResponse from "../../../services/response";
 import LeaderboardService from "../../services/user/leaderboard";
 import GameService from "../../services/game/game";
 import WalletService from "../../services/user/wallet";
+import UserService from "../../services/user/user";
 import authenticatedRequest from "../../authenticatedRequest";
 
 const userQueries = {
@@ -15,6 +16,13 @@ const userQueries = {
     // get user in the current context
     me: authenticatedRequest(async (_: any, __: any, context: any) => {
         return new ClientResponse(200, true, 'successful', { user: context.currentUser });
+    }),
+    getAllUsers: authenticatedRequest(async (
+        _: any,
+        { limit, page, search }: { limit?: number; page?: number; search?: string },
+        context: any
+    ) => {
+        return UserService.getAllUsers(context, page, limit, search);
     }),
     getUser: authenticatedRequest(async (_: any, __: any, context: any) => {
         return new ClientResponse(200, true, 'successful', context.currentUser);
