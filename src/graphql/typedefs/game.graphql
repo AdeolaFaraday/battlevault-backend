@@ -19,8 +19,8 @@ enum LudoColor {
 }
 
 type Token {
-  sn: Int!
-  color: LudoColor!
+  sn: Int
+  color: LudoColor
   active: Boolean
   position: Int
   isSafePath: Boolean
@@ -28,18 +28,18 @@ type Token {
 }
 
 type TokenMap {
-  blue: [Token!]!
-  yellow: [Token!]!
-  green: [Token!]!
-  red: [Token!]!
+  blue: [Token]
+  yellow: [Token]
+  green: [Token]
+  red: [Token]
 }
 
 type LudoPlayer {
-  id: ID!
-  name: String!
+  id: ID
+  name: String
   avatarUrl: String
-  color: LudoColor!
-  tokens: [LudoColor!]!
+  color: LudoColor
+  tokens: [LudoColor]
   capturedCount: Int
   finishedCount: Int
   lastSeen: Float
@@ -47,9 +47,9 @@ type LudoPlayer {
 
 type LudoGameState {
   _id: ID!
-  name: String!
-  type: GameType!
-  players: [LudoPlayer!]!
+  name: String
+  type: GameType
+  players: [LudoPlayer]
   currentTurn: String # Player ID
   diceValue: [Int!]!
   isRolling: Boolean
