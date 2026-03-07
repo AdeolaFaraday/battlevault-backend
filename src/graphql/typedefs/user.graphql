@@ -23,6 +23,10 @@ type User {
   bio: String
   avatar: String
   country: Country
+  role: String
+  accountStatus: String
+  profileStatus: String
+  createdAt: String
   wallet: Wallet
 }
 
@@ -72,6 +76,7 @@ input UpdateUserProfileInput {
 type Query {
   # User
   me: Response
+  getAllUsers(limit: Int, page: Int, search: String): Response
   getUser: Response
   getUserStats: Response
   getUserGames(limit: Int, page: Int, search: String): Response

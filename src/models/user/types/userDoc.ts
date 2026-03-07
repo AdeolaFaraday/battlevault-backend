@@ -19,6 +19,7 @@ export interface IUser {
     emailVerificationToken?: string;
     avatar?: string;
     gender: string;
+    role: 'USER' | 'ADMIN';
     totalGamesPlayed?: number;
     totalWins?: number;
     totalLosses?: number;

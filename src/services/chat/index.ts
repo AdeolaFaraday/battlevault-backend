@@ -114,11 +114,11 @@ class ChatService {
 
         const chats = snapshot.docs.map(doc => {
             const data = doc.data();
-            const unreadCounts = data.unreadCounts || {};
+            const count = (data.unreadCounts && data.unreadCounts[userId]) || data[`unreadCounts.${userId}`] || 0;
             return {
                 id: doc.id,
                 ...data,
-                unreadCount: unreadCounts[userId] || 0
+                unreadCount: count
             };
         });
 
@@ -161,6 +161,77 @@ class ChatService {
         });
 
         return populatedChats;
+    }
+
+    /**
+     * Get total unread messages count and the messages for a user
+     */
+    static async getUnreadMessagesCount(userId: string) {
+        const firestore = admin.firestore();
+
+        const snapshot = await firestore.collection('chats')
+            .where('participants', 'array-contains', userId)
+            .get();
+
+        console.log("getUnreadMessagesCount for userId:", userId, "Type:", typeof userId);
+
+        if (snapshot.empty) {
+            console.log("No chats found for user");
+            return { totalUnread: 0, messages: [] };
+        }
+
+        const messages: any[] = [];
+        let totalUnread = 0;
+
+        for (const doc of snapshot.docs) {
+            const data = doc.data();
+            let count = 0;
+
+            // 1. Check nested object
+            if (data.unreadCounts && typeof data.unreadCounts[userId] === 'number') {
+                count = data.unreadCounts[userId];
+            }
+
+            // 2. Check for flattened key anywhere in the data
+            if (count === 0) {
+                // Look for any key that contains the userId and "unreadCounts"
+                const keys = Object.keys(data);
+                const foundKey = keys.find(k => k.includes(userId) && k.toLowerCase().includes('unreadcounts'));
+                if (foundKey && typeof data[foundKey] === 'number') {
+                    count = data[foundKey];
+                }
+            }
+
+            console.log(`Chat ${doc.id}: calculated count = ${count}. userId = ${userId}`);
+
+            if (count > 0) {
+                totalUnread += count;
+                try {
+                    const msgSnapshot = await doc.ref.collection('messages')
+                        .where('senderId', '!=', userId)
+                        .where('read', '==', false)
+                        .orderBy('senderId')
+                        .orderBy('timestamp', 'desc')
+                        .limit(count)
+                        .get();
+
+                    const chatMessages = msgSnapshot.docs.map(msgDoc => ({
+                        id: msgDoc.id,
+                        ...msgDoc.data()
+                    }));
+                    messages.push(...chatMessages);
+                } catch (err) {
+                    console.error(`Error fetching unread messages for chat ${doc.id}:`, err);
+                }
+            }
+        }
+
+        // Final sort
+        messages.sort((a, b) =>
+            new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+        );
+
+        return { totalUnread, messages };
     }
 }
 

@@ -87,4 +87,5 @@ extend type Mutation {
   createTournament(input: CreateTournamentInput!): Response
   registerForTournament(tournamentId: ID!, password: String): Response
   startTournament(tournamentId: ID!): Response
+  advanceUserInTournament(tournamentId: ID!, userId: ID!): Response
 }
