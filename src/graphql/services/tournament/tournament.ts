@@ -2,6 +2,9 @@ import Tournament from "../../../models/tournament/tournament";
 import Game from "../../../models/game/game";
 import TournamentStage from "../../../models/tournament/tournamentStage";
 import ClientResponse from "../../../services/response";
+import User from "../../../models/user/user";
+import { emailService } from "../../../services/email";
+import { loadTemplate } from "../../../utlis/templateLoader";
 
 export default class TournamentService {
     static async createTournament(input: any) {
@@ -14,8 +17,15 @@ export default class TournamentService {
         }
     }
 
-    static async startTournament(tournamentId: string) {
+    static async startTournament(tournamentId: string, context?: any) {
         try {
+            if (context) {
+                const user = await context.getUserLocal();
+                if (!user || user.role !== 'ADMIN') {
+                    return new ClientResponse(403, false, "Forbidden: Admin access required to start tournament");
+                }
+            }
+
             const tournament = await Tournament.findById(tournamentId);
             if (!tournament) return new ClientResponse(404, false, "Tournament not found");
 
@@ -27,6 +37,19 @@ export default class TournamentService {
                 // Strict power of 2 check can also be added here
                 return new ClientResponse(400, false, "Tournament is not full yet");
             }
+
+            // Populate actual first name and last name for registered users
+            const registeredUserIds = tournament.registeredUsers.map(ru => ru.userId);
+            const users = await User.find({ _id: { $in: registeredUserIds } });
+            const userMap = new Map(users.map(u => [u._id.toString(), u]));
+
+            tournament.registeredUsers.forEach(ru => {
+                const u = userMap.get(ru.userId.toString());
+                if (u) {
+                    ru.name = `${u.firstName} ${u.lastName}`;
+                }
+            });
+            await tournament.save();
 
             const totalPlayers = tournament.maxUsers;
             const totalRounds = Math.log2(totalPlayers);
@@ -159,6 +182,34 @@ export default class TournamentService {
             tournament.startDate = new Date();
             await tournament.save();
 
+            const tournamentTitle = tournament.title;
+
+            process.nextTick(async () => {
+                try {
+                    const template = await loadTemplate('tournamentStart');
+
+                    for (const u of users) {
+                        try {
+                            const html = template({
+                                firstName: u.firstName,
+                                tournamentTitle: tournamentTitle,
+                                tournamentId: tournamentId
+                            });
+
+                            await emailService.sendEmail({
+                                to: [u.email],
+                                subject: `Tournament Started: ${tournamentTitle}`,
+                                html: html
+                            });
+                        } catch (err) {
+                            console.error(`Failed to send email to ${u.email}:`, err);
+                        }
+                    }
+                } catch (emailErr) {
+                    console.error('Error fetching users for tournament start email:', emailErr);
+                }
+            });
+
             return new ClientResponse(200, true, "Tournament started successfully", tournament);
 
         } catch (error: any) {
@@ -269,6 +320,75 @@ export default class TournamentService {
 
             const isRegistered = tournament.registeredUsers.some(reg => reg.userId.toString() === user.id);
             return new ClientResponse(200, true, "Registration status retrieved", { isRegistered });
+        } catch (error: any) {
+            return new ClientResponse(500, false, error.message);
+        }
+    }
+
+    static async advanceUserInTournament(tournamentId: string, userId: string, context: any) {
+        try {
+            const user = await context.getUserLocal();
+            if (!user || user.role !== 'ADMIN') {
+                return new ClientResponse(403, false, "Forbidden: Admin access required");
+            }
+
+            const tournament = await Tournament.findById(tournamentId);
+            if (!tournament) return new ClientResponse(404, false, "Tournament not found");
+
+            if (tournament.status !== 'ONGOING') {
+                return new ClientResponse(400, false, "Tournament is not strictly ongoing.");
+            }
+
+            const currentStageId = tournament.currentStage;
+            if (!currentStageId) return new ClientResponse(400, false, "Tournament has no active stage");
+
+            // Find the game in the active stage containing this user
+            const activeGame = await Game.findOne({
+                tournamentId: tournament._id,
+                stageId: currentStageId,
+                'players.id': userId,
+                status: { $ne: 'finished' }
+            });
+
+            if (!activeGame) {
+                return new ClientResponse(404, false, "Active game for this user not found in the current stage");
+            }
+
+            // End the game
+            activeGame.status = 'finished';
+            activeGame.winner = userId;
+            await activeGame.save();
+
+            // Advance the user to the next game slot
+            if (activeGame.nextGameId) {
+                const nextGame = await Game.findById(activeGame.nextGameId);
+                if (nextGame) {
+                    const winningPlayer = activeGame.players.find((p: any) => p.id === userId);
+
+                    if (winningPlayer) {
+                        if (!nextGame.players) nextGame.players = [];
+
+                        const slot = activeGame.nextGameSlot ?? 0;
+                        const LudoColor = { RED: 'red', GREEN: 'green', BLUE: 'blue', YELLOW: 'yellow' };
+                        const pColors = slot === 0 ? [LudoColor.RED, LudoColor.GREEN] : [LudoColor.BLUE, LudoColor.YELLOW];
+
+                        nextGame.players.push({
+                            id: winningPlayer.id,
+                            name: winningPlayer.name,
+                            color: pColors[0],
+                            tokens: pColors,
+                            slot: slot
+                        });
+
+                        await nextGame.save();
+                    }
+                }
+            }
+
+            // Check if stage is completed after this advancement
+            await this.handleGameCompletion(currentStageId.toString());
+
+            return new ClientResponse(200, true, "User advanced successfully");
         } catch (error: any) {
             return new ClientResponse(500, false, error.message);
         }

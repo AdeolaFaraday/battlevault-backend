@@ -30,6 +30,11 @@ type ChatList {
 
 type UserList {
   users: [User]
+  total: Int
+  page: Int
+  limit: Int
+  totalPages: Int
+  hasMore: Boolean
 }
 
 type UnreadMessagesResponse {

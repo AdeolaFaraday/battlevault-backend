@@ -39,6 +39,8 @@ const resolvers = {
             if (obj.chatId !== undefined && obj.text !== undefined) return 'Message';
             if (obj.participants !== undefined && obj.lastMessage !== undefined) return 'Chat';
 
+            if (obj.unreadCount !== undefined && obj.messages !== undefined) return 'UnreadMessagesResponse';
+
             console.error('[GraphQL Union Resolver] Failed to resolve type for keys:', Object.keys(obj));
             return null;
         }
